@@ -1,0 +1,7 @@
+*
+!LICENCE
+!/**/
+!*.*
+*.asm
+*.wat
+*.wasm

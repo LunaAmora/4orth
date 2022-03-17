@@ -1,0 +1,103 @@
+include "std.porth"
+
+inline proc inc-Str int ptr -- int ptr in 1 ptr+ swap 1 - swap end
+
+proc @hex int -- int ptr in
+  memory hex-char sizeof(ptr) end
+  tmp-end hex-char !ptr
+  memory hexdigits sizeof(Str) end
+  "ABCDEF0" hexdigits !Str
+
+  let n in
+    while
+      hexdigits @Str.count 0 > if
+        n hexdigits @Str.data @8 = if
+          1 
+          hexdigits !Str.count
+          hexdigits @Str 
+          tmp-append drop false
+        else true end
+      else false end
+    do
+      hexdigits str-chop-one-left
+    end
+  end
+
+  tmp-end hex-char @ptr ptr-diff
+  hex-char @ptr
+end
+
+proc rec-hex int in
+  memory hexdigits sizeof(Str) end
+  "0123456789ABCDEF" hexdigits !Str
+  16 let v h in
+    v h     divmod swap
+    v h >=  if rec-hex else drop end
+    0 
+    while
+      over over != dup if
+        hexdigits str-chop-one-left
+      else
+        1 
+        hexdigits !Str.count
+        hexdigits @Str 
+        tmp-append drop
+      end
+    do 1 + end 
+    drop drop
+  end
+end
+
+proc char-to-hex int -- int ptr in
+  memory hex-str sizeof(ptr) end
+  tmp-end hex-str !ptr
+  
+  dup 0 = if drop
+    "00" tmp-append drop
+  else
+    rec-hex
+  end
+
+  tmp-end hex-str @ptr ptr-diff
+  hex-str @ptr
+end
+
+proc hex-digit int -- int bool in
+  let d in
+    d '0' >= d '9' <= land if  d '0' - true else
+    d 'a' >= d 'f' <= land if* d 'a' - 10 + true else
+    d 'A' >= d 'F' <= land if* d 'A' - 10 + true else
+    0 false end
+  end
+end
+
+proc try-parse-hex int ptr -- int bool in
+  let n s in
+    2 s "0x" streq
+    dup if
+      n 2 -
+      s 2 ptr+
+    else n s end
+  end
+  let n s in
+    lnot n 0 <= lor if 0 false else 
+      0 n s while over 0 > do 
+        let a n s in 
+          s @8 hex-digit 
+          lnot if 
+            drop a 0 * 
+            n n - 
+            NULL 
+          else 
+            a 16 * +
+            n 1 -
+            s 1 ptr+
+          end
+        end
+      end 
+      let ans _ pt in 
+        ans pt NULL ptr!= 
+      end
+    end
+  end
+end

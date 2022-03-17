@@ -1,0 +1,63 @@
+include "core.porth"
+
+import proc blitSub int int int int int int int int int in drop drop drop drop drop drop drop drop drop end
+import proc blit int int int int int ptr in drop drop drop drop drop drop end
+import proc textUtf8 int int int int in drop drop drop drop end
+import proc rect int int int int in drop drop drop drop end
+import proc line int int int int in drop drop drop drop end
+import proc oval int int int int in drop drop drop drop end
+import proc tone int int int int in drop drop drop drop end
+import proc hline int int int in drop drop drop end
+import proc vline int int int in drop drop drop end
+import proc text int int int in drop drop drop end
+import proc traceUtf8 int ptr in drop drop end
+import proc tracef int int in drop drop end
+import proc diskr int int in drop drop end
+import proc diskw int int in drop drop end
+import proc trace ptr in drop end
+
+proc rnd int -- int in end
+
+const $PALETTE0      0x04 end
+const $PALETTE1      0x08 end
+const $PALETTE2      0x0c end
+const $PALETTE3      0x10 end
+const $DRAW_COLORS   0x14 end
+const $GAMEPAD1      0x16 end
+const $GAMEPAD2      0x17 end
+const $GAMEPAD3      0x18 end
+const $GAMEPAD4      0x19 end
+const $MOUSE_X       0x1a end
+const $MOUSE_Y       0x1c end
+const $MOUSE_BUTTONS 0x1e end
+const $SYSTEM_FLAGS  0x1f end
+const $FRAMEBUFFER   0xa0 end
+
+const $SYSTEM_PRESERVE_FRAMEBUFFER 1 end
+const $SYSTEM_HIDE_GAMEPAD_OVERLAY 2 end
+
+const $BUTTON_1      1   end
+const $BUTTON_2      2   end
+const $BUTTON_LEFT   16  end
+const $BUTTON_RIGHT  32  end
+const $BUTTON_UP     64  end
+const $BUTTON_DOWN   128 end
+
+const $MOUSE_LEFT    1   end
+const $MOUSE_RIGHT   2   end
+const $MOUSE_MIDDLE  4   end
+
+const $BLIT_1BPP     0   end
+const $BLIT_2BPP     1   end
+const $BLIT_FLIP_X   2   end
+const $BLIT_FLIP_Y   4   end
+const $BLIT_ROTATE   8   end
+
+const $TONE_PULSE1   0   end
+const $TONE_PULSE2   1   end
+const $TONE_TRIANGLE 2   end
+const $TONE_NOISE    3   end
+const $TONE_MODE1    0   end
+const $TONE_MODE2    4   end
+const $TONE_MODE3    8   end
+const $TONE_MODE4    12  end
