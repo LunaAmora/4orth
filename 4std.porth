@@ -101,3 +101,18 @@ proc try-parse-hex int ptr -- int bool in
     end
   end
 end
+
+proc append-std
+  int ptr
+  --
+  int ptr
+in
+  memory path sizeof(ptr) end
+  tmp-end path !ptr
+  
+  tmp-append drop
+  "/std" tmp-append drop
+  
+  tmp-end path @ptr ptr-diff
+  path @ptr
+end
