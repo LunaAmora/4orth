@@ -1,4 +1,4 @@
-# 4rth is a Porth to Wasm compiler with Wasm-4 bindings
+# 4orth is a Porth to Wasm compiler with Wasm-4 bindings
 ## Quick Start
 
 ### Bootstrapping
@@ -37,7 +37,7 @@ $ ./4orth com -b -r game.porth
 
 ### Status
 
-4rth is not feature complete with the curent open version of Porth and Wasm-4 yet. The curent set of features not supported consists of:
+4orth is not feature complete with the curent open version of Porth and Wasm-4 yet. The curent set of features not supported consists of:
 
 - Int64
 - OP_IFSTAR
@@ -52,7 +52,7 @@ $ ./4orth com -b -r game.porth
 
 ### Changes
 
-4rth implement some features not available in Porth to facilitate Wasm and Wasm-4 integration:
+4orth implement some features not available in Porth to facilitate Wasm and Wasm-4 integration:
 
 - Hexadecimal numbers
 - Xor Intrinsic
