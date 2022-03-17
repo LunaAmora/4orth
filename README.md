@@ -16,7 +16,7 @@ $ ./porth com 4orth.porth
 
 ### Compilation
 
-Compilation generates WebAssembly code and compiles it with [WABT](https://github.com/WebAssembly/wabt). So make sure you have it available in your `$PATH`.
+Compilation generates WebAssembly Text code and compiles it with [WABT](https://github.com/WebAssembly/wabt). So make sure you have it available in your `$PATH`.
 
 ```console
 $ ./4orth com game.porth
