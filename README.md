@@ -57,10 +57,11 @@ $ ./4orth com -b -r game.porth
 - Hexadecimal numbers
 - Xor Intrinsic
 - Baked in randon number generator (will be removed once there is float and int64 support).
-Gets an int from the stack and generates a number bettwen 0 and that number, returning the result:
 ```porth
-20 rnd 
+inline proc rnd-coord -- int int in 20 rnd 20 rnd end
 ```
+This inline proc for example returns two ints between 0 and 20.
+
 - Import proc
 ```porth
 import proc trace ptr in drop end
