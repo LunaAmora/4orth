@@ -56,7 +56,7 @@ $ ./4orth com -b -r game.porth
 
 - Hexadecimal numbers
 - Xor Intrinsic
-- Baked in randon number generator (will be removed once there is float and int64 support)
+- Baked in randon number generator (will be removed once there is float and int64 support).
 Gets an int from the stack and generates a number bettwen 0 and that number, returning the result:
 ```porth
 20 rnd 
