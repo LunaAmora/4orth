@@ -43,14 +43,9 @@ jobs:
           unzip w4-linux.zip
           rm -f w4-linux.zip
           
-      - name: Checkout Porth
-        uses: actions/checkout@v3
-        with:
-          repository: https://gitlab.com/tsoding/porth
-          path: porth
-          
       - name: Bootstrap Porth
         run: |
+          git clone https://gitlab.com/tsoding/porth.git
           cd porth
           fasm -m 524288 ./bootstrap/porth-linux-x86_64.fasm
           chmod +x ./bootstrap/porth-linux-x86_64
