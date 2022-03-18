@@ -1,0 +1,45 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Setup env
+        run: |
+          sudo apt update
+          sudo apt install npm wabt binaryen git fasm
+          npm install -g wasm4
+          git clone https://gitlab.com/tsoding/porth.git
+          
+      - name: Bootstrap Porth
+        run: |
+          cd porth
+          fasm -m 524288 ./bootstrap/porth-linux-x86_64.fasm
+          chmod +x ./bootstrap/porth-linux-x86_64
+          ./bootstrap/porth-linux-x86_64 com ./porth.porth
+          ./porth com ../4orth.porth
+          
+      - name: Test snake example
+        run: ./4orth com -r -b -opt -wat ./example/snake-example.porth
