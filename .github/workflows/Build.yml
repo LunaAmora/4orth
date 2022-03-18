@@ -42,4 +42,4 @@ jobs:
           ./porth com ../4orth.porth
           
       - name: Test snake example
-        run: ./4orth com -r -b -opt -wat ./example/snake-example.porth
+        run: ./4orth -I ./porth/std com -r -b -opt -wat ./example/snake-example.porth
