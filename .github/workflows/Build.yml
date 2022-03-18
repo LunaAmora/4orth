@@ -31,15 +31,20 @@ jobs:
           sudo apt update
           sudo apt install npm wabt binaryen git fasm
           npm install -g wasm4
-          git clone https://gitlab.com/tsoding/porth.git
+      
+      - name: Check versiom
+        run: wasm-opt --version 
           
       - name: Bootstrap Porth
         run: |
+          git clone https://gitlab.com/tsoding/porth.git
           cd porth
           fasm -m 524288 ./bootstrap/porth-linux-x86_64.fasm
           chmod +x ./bootstrap/porth-linux-x86_64
           ./bootstrap/porth-linux-x86_64 com ./porth.porth
-          ./porth com ../4orth.porth
-          
+      
+      - name: Bootstrap 4orth
+        run: ./porth/porth -I ./porth/std com 4orth.porth
+        
       - name: Test snake example
         run: ./4orth -I ./porth/std com -r -b -opt -wat ./example/snake-example.porth
