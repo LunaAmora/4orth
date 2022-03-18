@@ -5061,10 +5061,11 @@ in
     "    com [OPTIONS] <file>  Compile the program\n"                                          fd fputs
     "      OPTIONS:\n"                                                                         fd fputs
     // TODO: implement -o flag for com subcommand
-    "        -opt                Optimize the program with wasm-opt\n"                         fd fputs
-    "        -b                  Bundles the program to a linux executable. (If with -r, executes the bundle)\n" fd fputs
-    "        -r                  Run the program after successful compilation\n"               fd fputs
-    "        -s                  Silent mode. Don't print any info about compilation phases\n" fd fputs
+    "        -r                Run the program after successful compilation\n"                 fd fputs
+    "        -b                Bundles the program to a linux executable. (If with -r, executes the bundle)\n" fd fputs
+    "        -opt              Optimize the program with wasm-opt\n"                           fd fputs
+    "        -wat              Transforms the labels stripped program back from `.wasm` to `.wat` \n"     fd fputs
+    "        -s                Silent mode. Don't print any info about compilation phases\n"   fd fputs
     "    dump <file>           Dump the ops of the program\n"                                  fd fputs
     "    lex <file>            Produce lexical analysis of the file\n"                         fd fputs
     "    summary <file>        Print the summary of the program\n"                             fd fputs
@@ -5122,6 +5123,8 @@ proc main in
   false run !bool
   memory optimize sizeof(bool) end
   false optimize !bool
+  memory wasm2wat sizeof(bool) end
+  false wasm2wat !bool
   memory bundle sizeof(bool) end
   false bundle !bool
 
@@ -5141,6 +5144,9 @@ proc main in
         true  // continue
       else args @@ptr "-opt"c cstreq if*
         true optimize !bool
+        true  // continue
+      else args @@ptr "-wat"c cstreq if*
+        true wasm2wat !bool
         true  // continue
       else
         args @@ptr input-file-path-cstr !ptr
@@ -5217,6 +5223,26 @@ proc main in
       fpb-rewind
     end
 
+    wasm2wat @bool if
+      fpb-end
+        tmp-end
+        "wasm2wat"c             tmp-append-ptr
+        fpb-end
+          base-file-path @Str fpb-append drop
+          ".wasm"              fpb-append drop
+          1                   fpb-alloc  drop
+          tmp-append-ptr
+          "-o"c                 tmp-append-ptr
+          fpb-end
+          base-file-path @Str fpb-append drop
+          ".wat"              fpb-append drop
+          1                   fpb-alloc  drop
+          tmp-append-ptr
+        NULL          tmp-append-ptr
+        silent @bool lnot cmd-echoed
+      fpb-rewind
+    end
+
     bundle @bool if
       fpb-end
         tmp-end
@@ -5234,16 +5260,19 @@ proc main in
           tmp-append-ptr
         NULL          tmp-append-ptr
         silent @bool lnot cmd-echoed
+      fpb-rewind
 
-        run @bool if
-          fpb-end tmp-end
+      run @bool if
+        fpb-end 
+          tmp-end
+          fpb-end
           base-file-path @Str fpb-append drop
           1                   fpb-alloc  drop
           tmp-append-ptr
           NULL          tmp-append-ptr
           silent @bool lnot cmd-echoed
-        end
-      fpb-rewind
+        fpb-rewind
+      end
     else run @bool if*
       fpb-end
         tmp-end
