@@ -39,8 +39,9 @@ jobs:
           fasm -m 524288 ./bootstrap/porth-linux-x86_64.fasm
           chmod +x ./bootstrap/porth-linux-x86_64
           ./bootstrap/porth-linux-x86_64 com ./porth.porth
+          ./porth.porth com ./porth.porth
       
-      - name: Bootstrap 4orth
+      - name: Build 4orth
         run: ./porth/porth -I ./porth/std com 4orth.porth
         
       - name: Test snake example
