@@ -29,7 +29,7 @@ jobs:
       - name: Setup env
         run: |
           sudo apt update
-          sudo apt install wabt fasm
+          sudo apt install wabt binaryen fasm
       
       - name: Download WASM4
         uses: robinraju/release-downloader@v1.3
@@ -56,4 +56,15 @@ jobs:
         run: ./porth/porth -I ./porth/std com 4orth.porth
         
       - name: Test snake example
-        run: ./4orth -I ./porth/std com -b -wat ./example/snake-example.porth
+        run: ./4orth -I ./porth/std com -b -opt -wat ./example/snake-example.porth
+      
+      - name: Build the Snake-example page
+        run:  |
+          w4 bundle ./example/snake-example.wasm --title "Snake Example" --html index.html
+          mkdir pages && mv index.html pages
+          
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4.2.5
+        with:
+          branch: gh-pages
+          folder: pages
