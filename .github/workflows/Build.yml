@@ -29,11 +29,8 @@ jobs:
       - name: Setup env
         run: |
           sudo apt update
-          sudo apt install npm wabt binaryen git fasm
+          sudo apt install npm wabt git fasm
           npm install -g wasm4
-      
-      - name: Check versiom
-        run: wasm-opt --version 
           
       - name: Bootstrap Porth
         run: |
@@ -47,4 +44,4 @@ jobs:
         run: ./porth/porth -I ./porth/std com 4orth.porth
         
       - name: Test snake example
-        run: ./4orth -I ./porth/std com -r -b -opt -wat ./example/snake-example.porth
+        run: ./4orth -I ./porth/std com -r -b -wat ./example/snake-example.porth
