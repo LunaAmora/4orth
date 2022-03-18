@@ -5204,8 +5204,6 @@ proc main in
         tmp-end
         "wasm-opt"c             tmp-append-ptr
         "-Oz"c                  tmp-append-ptr
-        "--zero-filled-memory"c tmp-append-ptr
-        "--strip-producers"c    tmp-append-ptr
         "--enable-multivalue"c  tmp-append-ptr
         fpb-end
           base-file-path @Str fpb-append drop
