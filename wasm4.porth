@@ -1,6 +1,6 @@
 include "core.porth"
 
-import proc blitSub int int int int int int int int int in drop drop drop drop drop drop drop drop drop end
+import proc blitSub int int int int int int int int ptr in drop drop drop drop drop drop drop drop drop end
 import proc blit int int int int int ptr in drop drop drop drop drop drop end
 import proc textUtf8 int int int int in drop drop drop drop end
 import proc rect int int int int in drop drop drop drop end
@@ -9,11 +9,11 @@ import proc oval int int int int in drop drop drop drop end
 import proc tone int int int int in drop drop drop drop end
 import proc hline int int int in drop drop drop end
 import proc vline int int int in drop drop drop end
-import proc text int int int in drop drop drop end
+import proc text int int ptr in drop drop drop end
+import proc traceUtf16 int ptr in drop drop end
 import proc traceUtf8 int ptr in drop drop end
-import proc tracef int int in drop drop end
-import proc diskr int int in drop drop end
-import proc diskw int int in drop drop end
+import proc diskr int ptr in drop drop end
+import proc diskw int ptr in drop drop end
 import proc trace ptr in drop end
 
 proc rnd int -- int in end
