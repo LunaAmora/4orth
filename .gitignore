@@ -5,3 +5,4 @@
 *.asm
 *.wat
 *.wasm
+.vscode/*
