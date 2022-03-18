@@ -40,6 +40,10 @@ $ ./4orth com -b -r game.porth
 4orth is not feature complete with the curent open version of Porth and Wasm-4 yet. The curent set of features not supported consists of:
 
 - Int64
+- Floats
+- Negative numbers
+
+Porth operations:
 - OP_IFSTAR
 - OP_BIND_LET
 - OP_BIND_PEEK
@@ -47,8 +51,6 @@ $ ./4orth com -b -r game.porth
 - OP_UNBIND
 - OP_PUSH_ADDR
 - OP_CALL_LIKE
-
-- Floats
 
 ### Changes
 
@@ -66,6 +68,6 @@ This inline proc for example returns two ints between 0 and 20.
 ```porth
 import proc trace ptr in drop end
 ```
-This adds the ability to call wasm-4 functions via the defined proc contract. Anything in the body of the proc will be ignored.
+This adds the ability to call the wasm-4 `trace` function via the defined proc contract. Anything in the body of the proc is ignored.
 
 All available functions, memory positions and constants from Wasm-4 are in the [wasm4.porth](./wasm4.porth) library.
