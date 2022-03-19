@@ -1,6 +1,8 @@
 # 4orth is a Porth to Wasm compiler with Wasm-4 bindings
 ## Quick Start
 
+You can download the latest [release](https://github.com/FrankWPA/4orth/releases) or [bootstrap](https://github.com/FrankWPA/4orth#bootstrapping) it yourself.
+
 ### Bootstrapping
 
 Since Porth is self-hosted you need to bootstrap it first. Follow [Porth](https://gitlab.com/tsoding/porth) bootstrapping instrunctions on how to do that.
@@ -16,7 +18,7 @@ $ ./porth com 4orth.porth
 
 ### Compilation
 
-Compilation generates WebAssembly Text code and compiles it with [WABT](https://github.com/WebAssembly/wabt). So make sure you have it available in your `$PATH`.
+Compilation generates [WAT](https://developer.mozilla.org/en-US/docs/WebAssembly/Understanding_the_text_format) and converts it to a [WebAssembly Binary Format](https://webassembly.github.io/spec/core/binary/index.html) .wasm file with [WABT](https://developer.mozilla.org/en-US/docs/WebAssembly/Text_format_to_wasm). So make sure you have it available in your `$PATH`.
 
 ```console
 $ ./4orth com game.porth
@@ -29,7 +31,7 @@ $ ./w4 bundle --linux game game.wasm
 $ ./game
 ```
 
-Or you can use the subcommands -b and -r to bundle and run after the compilation. Use 4orth help to view all subcommands. (As porth only supports Linux, the -b (bundle) flag creates an Linux executable. For other options, check `w4 bundle --help`)
+Or you can use the subcommands -b and -r to bundle and run after the compilation. Use 4orth help to view all subcommands. (As porth only supports Linux, the -b (bundle) flag creates an Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
 
 ```console
 $ ./4orth com -b -r game.porth
@@ -70,4 +72,4 @@ import proc trace ptr in drop end
 ```
 This adds the ability to call the wasm-4 `trace` function via the defined proc contract. Anything in the body of the proc is ignored.
 
-All available functions, memory positions and constants from Wasm-4 are in the [wasm4.porth](./wasm4.porth) library.
+All available [functions](https://wasm4.org/docs/reference/functions), constants and the [memory map](https://wasm4.org/docs/reference/memory) from Wasm-4 are in the [wasm4.porth](./wasm4.porth) library.
