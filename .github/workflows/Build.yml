@@ -58,9 +58,9 @@ jobs:
       - name: Test snake example
         run: ./4orth -I ./porth/std com -b -opt -wat ./example/snake-example.porth
       
-      - name: Build the Snake-example page
+      - name: Deploy
         run:  |
-          w4 bundle ./example/snake-example.wasm --title "Snake Example" --html index.html
+          ./w4 bundle ./example/snake-example.wasm --title "Snake Example" --html index.html
           mkdir pages && mv index.html pages
           
       - name: Deploy to gh-pages
