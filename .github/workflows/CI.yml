@@ -100,11 +100,10 @@ jobs:
         id: get_version
         uses: olegtarasov/get-tag@v2.1
 
-      - name: Example of consumption of the output
-        env:
-          LATEST: ${{ steps.latest_version.outputs.latest_tag }}
-          TAG: ${{ steps.get_version.outputs.tag }}
+      - name: Build release if tag is new
         if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
+        env:
+          TAG: ${{ steps.get_version.outputs.tag }}
         run: |
           mkdir "4oth-${TAG}-linux"
           mkdir "4oth-${TAG}-linux"/std
@@ -115,7 +114,9 @@ jobs:
           cd "4oth-${TAG}-linux"
           zip -r ../"4oth-${TAG}-linux".zip *
         
-      - uses: "marvinpinto/action-automatic-releases@latest"
+      - name: Publish release if tag is new  
+        if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "{{ GIT_TAG_NAME }}"
