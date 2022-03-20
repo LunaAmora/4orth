@@ -34,13 +34,9 @@ jobs:
         env:
           TAG: ${{ steps.get_version.outputs.tag }}
         run: |
-          mkdir "4oth-${TAG}-linux"
-          mkdir "4oth-${TAG}-linux"/std
-          mv 4orth "4oth-${TAG}-linux"/
-          mv core.porth "4oth-${TAG}-linux"/std
-          mv wasm4.porth "4oth-${TAG}-linux"/std
-          mv LICENSE "4oth-${TAG}-linux"/std
-          cd "4oth-${TAG}-linux"
+          mv 4orth porth/
+          mv wasm4.porth porth/std
+          cd porth
           zip -r ../"4oth-${TAG}-linux".zip *
         
       - name: Publish release if tag is new  
