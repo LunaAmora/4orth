@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup env
+        run: |
+          sudo apt update
+          sudo apt install wabt binaryen fasm
+      
+      - name: Download WASM4
+        uses: robinraju/release-downloader@v1.3
+        with:
+          latest: true
+          repository: aduros/wasm4
+          fileName: w4-linux.zip
+          
+      - name: Unzip WASM4
+        run: |
+          unzip w4-linux.zip
+          rm -f w4-linux.zip
+          
+      - name: Bootstrap Porth
+        run: |
+          git clone https://gitlab.com/tsoding/porth.git
+          cd porth
+          fasm -m 524288 ./bootstrap/porth-linux-x86_64.fasm
+          chmod +x ./bootstrap/porth-linux-x86_64
+          ./bootstrap/porth-linux-x86_64 com ./porth.porth
+          ./porth com ./porth.porth
+      
+      - name: Build 4orth
+        run: ./porth/porth -I ./porth/std com 4orth.porth
+        
+      - name: Test Compilation
+        run: ./4orth -I ./porth/std com -b -opt -wat ./example/snake-example.porth
+      
+      - name: Persist build 
+        uses: actions/upload-artifact@v3
+        with:
+          name: 4orth
+          path: |
+            4orth
+            ./porth/std/core.porth
+            wasm4.porth
+      
+      - name: Test html Bundle 
+        run:  ./w4 bundle ./example/snake-example.wasm --title "Snake Example" --html index.html
+      
+      - name: Persit Html
+        uses: actions/upload-artifact@v3
+        with:
+          name: index
+          path: index.html
+
+  deploy-page:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: index
+      
+      - name: Makedir
+        run:  mkdir pages && mv index.html pages
+      
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4.2.5
+        with:
+          branch: gh-pages
+          folder: pages
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Check out from Git
+        uses: actions/checkout@v3
+
+      - name: Get Latest Release
+        id: latest_version
+        uses: abatilo/release-info-action@v1.3.0
+        with:
+          owner: FrankWPA
+          repo:  4orth
+
+      - name: Get Current Tag
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
+      - name: Example of consumption of the output
+        env:
+          LATEST: ${{ steps.latest_version.outputs.latest_tag }}
+          TAG: ${{ steps.get_version.outputs.VERSION }}
+        if: ${{ $TAG != $LATEST }}
+        run: |
+          mkdir "4oth-${TAG}-linux"
+          mkdir "4oth-${TAG}-linux"/std
+          mv 4orth "4oth-${TAG}-linux"/
+          mv core.porth "4oth-${TAG}-linux"/std
+          mv wasm4.porth "4oth-${TAG}-linux"/std
+          mv LICENSE "4oth-${TAG}-linux"/std
+          cd "4oth-${TAG}-linux"
+          zip -r ../"4oth-${TAG}-linux".zip *
+        
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "${TAG}"
+          prerelease: true
+          files: 
+            "4oth-${TAG}-linux.zip"
+          env:
+            TAG: ${{ steps.get_version.outputs.VERSION }}
