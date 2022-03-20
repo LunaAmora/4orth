@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:        
+      - '*'
+
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out from Git
+        uses: actions/checkout@v3
+      - uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: CI.yml
+          workflow_conclusion: success
+          name: 4orth
+
+      - name: Get Latest Release
+        id: latest_version
+        uses: abatilo/release-info-action@v1.3.0
+        with:
+          owner: FrankWPA
+          repo:  4orth
+
+      - name: Get Current Tag
+        id: get_version
+        uses: olegtarasov/get-tag@v2.1
+
+      - name: Build release if tag is new
+        if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
+        env:
+          TAG: ${{ steps.get_version.outputs.tag }}
+        run: |
+          mv 4orth porth/
+          mv wasm4.porth porth/std
+          cd porth
+          zip -r ../"4oth-${TAG}-linux".zip *
+        
+      - name: Publish release if tag is new  
+        if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "${{ steps.get_version.outputs.tag }}"
+          prerelease: true
+          files: |
+            *.zip
