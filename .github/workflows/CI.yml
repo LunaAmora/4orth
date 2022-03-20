@@ -104,7 +104,7 @@ jobs:
         uses: olegtarasov/get-tag@v2.1
 
       - name: Build release if tag is new
-        # if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
+        if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
         env:
           TAG: ${{ steps.get_version.outputs.tag }}
         run: |
