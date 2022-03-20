@@ -98,13 +98,13 @@ jobs:
 
       - name: Get Current Tag
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        uses: olegtarasov/get-tag@v2.1
 
       - name: Example of consumption of the output
         env:
           LATEST: ${{ steps.latest_version.outputs.latest_tag }}
-          TAG: ${{ steps.get_version.outputs.VERSION }}
-        if: ${{ steps.get_version.outputs.VERSION != steps.latest_version.outputs.latest_tag }}
+          TAG: ${{ steps.get_version.outputs.tag }}
+        if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
         run: |
           mkdir "4oth-${TAG}-linux"
           mkdir "4oth-${TAG}-linux"/std
@@ -118,7 +118,7 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "${{ steps.get_version.outputs.VERSION }}"
+          automatic_release_tag: "{{ GIT_TAG_NAME }}"
           prerelease: true
           files: 
-            "4oth-${{ steps.get_version.outputs.VERSION }}-linux.zip"
+            "4oth-$GIT_TAG_NAME-linux.zip"
