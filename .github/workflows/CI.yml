@@ -118,9 +118,7 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "${TAG}"
+          automatic_release_tag: "${{ steps.get_version.outputs.VERSION }}"
           prerelease: true
           files: 
-            "4oth-${TAG}-linux.zip"
-          env:
-            TAG: ${{ steps.get_version.outputs.VERSION }}
+            "4oth-${{ steps.get_version.outputs.VERSION }}-linux.zip"
