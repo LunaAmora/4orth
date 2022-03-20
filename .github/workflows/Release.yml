@@ -47,4 +47,5 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "${{ steps.get_version.outputs.tag }}"
           prerelease: true
-          files: *.zip
+          files: |
+            *.zip
