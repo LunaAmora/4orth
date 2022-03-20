@@ -14,8 +14,10 @@ jobs:
     steps:
       - name: Check out from Git
         uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: dawidd6/action-download-artifact@v2
         with:
+          workflow: CI.yml
+          workflow_conclusion: success
           name: 4orth
 
       - name: Get Latest Release
