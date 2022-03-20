@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    tags:        
+      - '*'
+
+  workflow_dispatch:
+
+jobs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out from Git
+        uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: 4orth
+
+      - name: Get Latest Release
+        id: latest_version
+        uses: abatilo/release-info-action@v1.3.0
+        with:
+          owner: FrankWPA
+          repo:  4orth
+
+      - name: Get Current Tag
+        id: get_version
+        uses: olegtarasov/get-tag@v2.1
+
+      - name: Build release if tag is new
+        if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
+        env:
+          TAG: ${{ steps.get_version.outputs.tag }}
+        run: |
+          echo "4oth-$TAG-linux"
+          echo 4oth-$TAG-linux
+          echo "4oth-${TAG}-linux"
+          echo 4oth-${TAG}-linux
+          echo $TAG
+          echo $GIT_TAG_NAME
+          echo "$GIT_TAG_NAME"
+          echo "${GIT_TAG_NAME}"
+
