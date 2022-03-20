@@ -17,7 +17,7 @@ jobs:
       - name: Setup env
         run: |
           sudo apt update
-          sudo apt install wabt binaryen fasm
+          sudo apt install wabt fasm
       
       - name: Download WASM4
         uses: robinraju/release-downloader@v1.3
@@ -43,8 +43,8 @@ jobs:
       - name: Build 4orth
         run: ./porth/porth -I ./porth/std com 4orth.porth
         
-      - name: Test Compilation
-        run: ./4orth -I ./porth/std com -b -opt -wat ./example/snake-example.porth
+      # - name: Test Compilation
+      #   run: ./4orth -I ./porth/std com -b -opt -wat ./example/snake-example.porth
       
       - name: Persist build 
         uses: actions/upload-artifact@v3
@@ -55,32 +55,32 @@ jobs:
             ./porth/std/core.porth
             wasm4.porth
       
-      - name: Test html Bundle 
-        run:  ./w4 bundle ./example/snake-example.wasm --title "Snake Example" --html index.html
+      # - name: Test html Bundle 
+      #   run:  ./w4 bundle ./example/snake-example.wasm --title "Snake Example" --html index.html
       
-      - name: Persit Html
-        uses: actions/upload-artifact@v3
-        with:
-          name: index
-          path: index.html
+      # - name: Persit Html
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: index
+      #     path: index.html
 
-  deploy-page:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-        with:
-          name: index
+  # deploy-page:
+  #   runs-on: ubuntu-latest
+  #   needs: [build]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: index
       
-      - name: Makedir
-        run:  mkdir pages && mv index.html pages
+  #     - name: Makedir
+  #       run:  mkdir pages && mv index.html pages
       
-      - name: Deploy to gh-pages
-        uses: JamesIves/github-pages-deploy-action@v4.2.5
-        with:
-          branch: gh-pages
-          folder: pages
+  #     - name: Deploy to gh-pages
+  #       uses: JamesIves/github-pages-deploy-action@v4.2.5
+  #       with:
+  #         branch: gh-pages
+  #         folder: pages
 
   release:
     runs-on: ubuntu-latest
@@ -104,8 +104,10 @@ jobs:
         uses: olegtarasov/get-tag@v2.1
 
       - name: Build release if tag is new
-        if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
+        # if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}
         env:
           TAG: ${{ steps.get_version.outputs.tag }}
-        run: echo $TAG
+        run: |
+          echo "4oth-$TAG-linux"
+          echo "4oth-${TAG}-linux"
 
