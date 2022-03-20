@@ -109,5 +109,11 @@ jobs:
           TAG: ${{ steps.get_version.outputs.tag }}
         run: |
           echo "4oth-$TAG-linux"
+          echo 4oth-$TAG-linux
           echo "4oth-${TAG}-linux"
+          echo 4oth-${TAG}-linux
+          echo $TAG
+          echo $GIT_TAG_NAME
+          echo "$GIT_TAG_NAME"
+          echo "${GIT_TAG_NAME}"
 
