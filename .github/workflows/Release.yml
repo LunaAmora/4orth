@@ -47,6 +47,4 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "${{ steps.get_version.outputs.tag }}"
           prerelease: true
-          files: 
-            4oth-${GIT_TAG_NAME}-linux.zip
-
+          files: *.zip
