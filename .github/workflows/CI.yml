@@ -104,7 +104,7 @@ jobs:
         env:
           LATEST: ${{ steps.latest_version.outputs.latest_tag }}
           TAG: ${{ steps.get_version.outputs.VERSION }}
-        if: ${{ TAG != LATEST }}
+        if: ${{ steps.get_version.outputs.VERSION != steps.latest_version.outputs.latest_tag }}
         run: |
           mkdir "4oth-${TAG}-linux"
           mkdir "4oth-${TAG}-linux"/std
