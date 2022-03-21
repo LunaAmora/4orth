@@ -5,7 +5,7 @@ memory frame-count sizeof(int) end
 memory prev-state sizeof(u8) end
 
 // Snake variables
-memory lenght sizeof(int) end
+memory length sizeof(int) end
 memory dirx sizeof(int) end
 memory diry sizeof(int) end
 memory snake sizeof(int) 2 * 32 * end
@@ -27,7 +27,7 @@ inline proc new-fruit in rnd-coord fruit x+ !int fruit y+ !int end
 inline proc ptr> ptr ptr -- bool in swap cast(int) swap cast(int) > end
 
 inline proc @gamepad   -- int in $GAMEPAD1 cast(ptr) @8 end
-inline proc @snake-end -- ptr in snake lenght @int 8 * ptr+ end
+inline proc @snake-end -- ptr in snake length @int 8 * ptr+ end
 
 // Return the wrapped snake coord around the screen given its position and direction
 inline proc clamp-wrap int int -- int in
@@ -36,7 +36,7 @@ inline proc clamp-wrap int int -- int in
 end
 
 proc main in
-  // Collor palette setting
+  // Color palette setting
   0x151640 $PALETTE0 cast(ptr) !int
   0x3f6d9e $PALETTE1 cast(ptr) !int
   0xf783b0 $PALETTE2 cast(ptr) !int
@@ -53,7 +53,7 @@ proc main in
 
   // Initialize snake body and direction
   1 dirx           !int
-  3 lenght         !int
+  3 length         !int
   2 snake          !int
   1 snake 1 snake+ !int
   0 snake 2 snake+ !int
@@ -73,7 +73,7 @@ proc snake-dir int int in
   end
 end
 
-// Compare curent pressed keys with keys pressed in the last checked frame and calls snake-dir
+// Compare current pressed keys with keys pressed in the last checked frame and calls snake-dir
 proc check-keys in
   memory gamepad sizeof(int) end
 
@@ -127,7 +127,7 @@ end
 proc check-fruit in
   snake x+ @int fruit x+ @int =
   snake y+ @int fruit y+ @int = land if
-    lenght ++
+    length ++
     new-fruit
   end
 end

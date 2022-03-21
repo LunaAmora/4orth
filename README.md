@@ -5,7 +5,7 @@ You can download the latest [release](https://github.com/FrankWPA/4orth/releases
 
 ### Bootstrapping
 
-Since Porth is self-hosted you need to bootstrap it first. Follow [Porth](https://gitlab.com/tsoding/porth) bootstrapping instrunctions on how to do that.
+Since Porth is self-hosted you need to bootstrap it first. Follow [Porth](https://gitlab.com/tsoding/porth) bootstrapping instructions on how to do that.
 
 Secondly you will need to install:
 - [WASM-4](https://wasm4.org/)
@@ -31,15 +31,17 @@ $ ./w4 bundle --linux game game.wasm
 $ ./game
 ```
 
-Or you can use the subcommands -b and -r to bundle and run after the compilation. Use 4orth help to view all subcommands. (As porth only supports Linux, the -b (bundle) flag creates an Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
+Or you can use the subcommands `-b` and `-r` to bundle and run after the compilation. (As porth only supports Linux, `-b` creates a Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
 
 ```console
 $ ./4orth com -b -r game.porth
 ```
 
+Use `-opt` to benefit from [binaryen](https://github.com/WebAssembly/binaryen) optimization. Use `4orth help` to view all other available subcommands.
+
 ### Status
 
-4orth is not feature complete with the curent open version of Porth and Wasm-4 yet. The curent set of features not supported consists of:
+4orth is not feature complete with the current open version of Porth and Wasm-4 yet. The current set of features not supported consists of:
 
 - Int64
 - Floats
@@ -56,11 +58,11 @@ Porth operations:
 
 ### Changes
 
-4orth implement some features not available in Porth to facilitate Wasm and Wasm-4 integration:
+4orth implements some features not available in Porth to facilitate Wasm and Wasm-4 integration:
 
 - Hexadecimal numbers
 - Xor Intrinsic
-- Baked in randon number generator (will be removed once there is float and int64 support).
+- Baked in random number generator (will be removed once there is float and int64 support).
 ```porth
 inline proc rnd-coord -- int int in 20 rnd 20 rnd end
 ```
