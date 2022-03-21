@@ -4,14 +4,15 @@ memory frame-count sizeof(int) end
 memory prev-state  sizeof(u8)  end
 
 memory string sizeof(ptr) end
-memory coord sizeof(int) 2 * end
 memory str1 sizeof(ptr) end
 memory str2 sizeof(ptr) end
 
-inline proc ++ ptr in inc64 end
-inline proc @gamepad  -- int in $GAMEPAD1 cast(ptr) @8 end
+memory coord sizeof(int) 2 * end
 inline proc get-coord -- int int in coord @int coord 32 ptr+ @int end
 inline proc set-coord    int int in coord !int coord 32 ptr+ !int end
+
+inline proc @gamepad  -- int in $GAMEPAD1 cast(ptr) @8 end
+inline proc ++ ptr in inc64 end
 
 proc rnd-coord in
  frame-count @int rnd  65 % 5 +
@@ -47,5 +48,5 @@ proc update in frame-count ++
   end
 
   get-coord string @ptr text
-  150 25 "Press any key!"c text
+  150 5 "Press a wasm-4 key!"c text
 end
