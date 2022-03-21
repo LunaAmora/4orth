@@ -1,0 +1,51 @@
+include "wasm4.porth"
+
+memory frame-count sizeof(int) end
+memory prev-state  sizeof(u8)  end
+
+memory string sizeof(ptr) end
+memory coord sizeof(int) 2 * end
+memory str1 sizeof(ptr) end
+memory str2 sizeof(ptr) end
+
+inline proc ++ ptr in inc64 end
+inline proc @gamepad  -- int in $GAMEPAD1 cast(ptr) @8 end
+inline proc get-coord -- int int in coord @int coord 32 ptr+ @int end
+inline proc set-coord    int int in coord !int coord 32 ptr+ !int end
+
+proc rnd-coord in
+ frame-count @int rnd  65 % 5 +
+ frame-count @int rnd 135 % 5 +
+ set-coord
+end
+
+proc main in
+  0x000000 $PALETTE0 cast(ptr) !int
+  "Hello Wasm!"c dup str1 !ptr string !ptr
+  "Hello Porth!"c    str2 !ptr
+  rnd-coord
+end
+
+proc check-keys in
+  memory gamepad sizeof(int) end
+
+  @gamepad      dup dup
+  prev-state @8 xor and swap
+  prev-state !8
+
+  0 != if 
+    2 rnd 1 = if str1 else str2 end  @ptr string !ptr
+    0xffffff rnd $PALETTE2 cast(ptr) !int
+    rnd-coord
+  end
+end
+
+
+proc update in frame-count ++
+  frame-count @int 5 % 0 = if
+    check-keys
+  end
+
+  get-coord string @ptr text
+  150 25 "Press any key!"c text
+end

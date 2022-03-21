@@ -1,30 +1,33 @@
 include "wasm4.porth"
 
 // Game state
-memory frame-count sizeof(u32) end
+memory frame-count sizeof(int) end
 memory prev-state sizeof(u8) end
 
 // Snake variables
-memory lenght sizeof(u32) end
-memory dirx sizeof(u32) end
-memory diry sizeof(u32) end
-memory snake 2048 end
+memory lenght sizeof(int) end
+memory dirx sizeof(int) end
+memory diry sizeof(int) end
+memory snake sizeof(int) 2 * 32 * end
 
 // Fruit variables
 memory fruit 8 end
 memory fruit-sprite 16 end
 
 // Helper pointer offsets
+inline proc ++ ptr in inc32 end
 inline proc x+ ptr -- ptr in end 
 inline proc y+ ptr -- ptr in 4 ptr+ end 
-inline proc snake+ ptr -- ptr in 8 ptr+ end
+inline proc snake+ ptr int -- ptr in 8 * ptr+ end
+inline proc snake++ ptr -- ptr in 1 snake+ end
 
 // Helper inline procs
-inline proc @mem int -- ptr in cast(ptr) end
 inline proc rnd-coord -- int int in 20 rnd 20 rnd end
-inline proc snake-end -- ptr in snake lenght @32 8 * ptr+ end
+inline proc new-fruit in rnd-coord fruit x+ !int fruit y+ !int end
 inline proc ptr> ptr ptr -- bool in swap cast(int) swap cast(int) > end
-inline proc new-fruit in rnd-coord fruit x+ !32 fruit y+ !32 end
+
+inline proc @gamepad   -- int in $GAMEPAD1 cast(ptr) @8 end
+inline proc @snake-end -- ptr in snake lenght @int 8 * ptr+ end
 
 // Return the wrapped snake coord around the screen given its position and direction
 inline proc clamp-wrap int int -- int in
@@ -33,48 +36,48 @@ inline proc clamp-wrap int int -- int in
 end
 
 proc main in
-  // Collor palelle setting
-  0x151640 $PALETTE0 @mem !32
-  0x3f6d9e $PALETTE1 @mem !32
-  0xf783b0 $PALETTE2 @mem !32
-  0xe6f2ef $PALETTE3 @mem !32
+  // Collor palette setting
+  0x151640 $PALETTE0 cast(ptr) !int
+  0x3f6d9e $PALETTE1 cast(ptr) !int
+  0xf783b0 $PALETTE2 cast(ptr) !int
+  0xe6f2ef $PALETTE3 cast(ptr) !int
 
   // 8 x 8 Fruit sprite in 2BPP (2 bits per pixel)
-  0x2A000     fruit-sprite !32
-  0x5C36F00E  fruit-sprite 4  ptr+ !32
-  0x57D557D6  fruit-sprite 8  ptr+ !32
-  0xF00F5C35  fruit-sprite 12 ptr+ !32
+  0x2A000     fruit-sprite !int
+  0x5C36F00E  fruit-sprite 4  ptr+ !int
+  0x57D557D6  fruit-sprite 8  ptr+ !int
+  0xF00F5C35  fruit-sprite 12 ptr+ !int
 
   // Initialize fruit in a random position
   new-fruit
 
   // Initialize snake body and direction
-  1 dirx !32
-  3 lenght   !32
-  2 snake    !32
-  1 snake 8  ptr+ !32
-  0 snake 16 ptr+ !32
+  1 dirx           !int
+  3 lenght         !int
+  2 snake          !int
+  1 snake 1 snake+ !int
+  0 snake 2 snake+ !int
 end
 
 // Change snake direction based on input xdir and ydir.
 //If value is 1 it's positive, otherwise it's negative
 proc snake-dir int int in
-  dup 0 != dirx @32 0 = land if
-      dirx !32
-    0 diry !32 drop
+  dup 0 != dirx @int 0 = land if
+      dirx !int
+    0 diry !int drop
   else drop
-    dup 0 != diry @32 0 = land if
-        diry !32
-      0 dirx !32
+    dup 0 != diry @int 0 = land if
+        diry !int
+      0 dirx !int
     else drop end
   end
 end
 
 // Compare curent pressed keys with keys pressed in the last checked frame and calls snake-dir
 proc check-keys in
-  memory gamepad sizeof(u32) end
+  memory gamepad sizeof(int) end
 
-  $GAMEPAD1 cast(ptr) @8 dup dup
+  @gamepad dup dup
   prev-state @8 xor and swap
   prev-state !8
 
@@ -95,26 +98,26 @@ end
 proc snake-update in
   memory n sizeof(ptr) end
 
-  snake x+ @32 
-  snake y+ @32
-  snake snake+
-  while dup snake-end ptr< do n !ptr
-    n @ptr x+ @32
-    n @ptr y+ @32 rot
-    n @ptr y+ !32 rot
-    n @ptr x+ !32
-    n @ptr snake+
+  snake x+ @int 
+  snake y+ @int
+  snake snake++
+  while dup @snake-end ptr< do n !ptr
+    n @ptr x+ @int
+    n @ptr y+ @int rot
+    n @ptr y+ !int rot
+    n @ptr x+ !int
+    n @ptr snake++
   end drop drop drop
 
-  dirx @32 0 != if
-    snake x+ @32 dirx @32
+  dirx @int 0 != if
+    snake x+ @int dirx @int
     clamp-wrap
-    snake x+ !32
+    snake x+ !int
   else 
-    diry @32 0 != if
-      snake y+ @32 diry @32
+    diry @int 0 != if
+      snake y+ @int diry @int
       clamp-wrap
-      snake y+ !32
+      snake y+ !int
     end
   end
 end
@@ -122,21 +125,21 @@ end
 // Check if the snake head is colliding with the fruit.
 // Incrementing the snake and generating a new fruit if true.
 proc check-fruit in
-  snake x+ @32 fruit x+ @32 =
-  snake y+ @32 fruit y+ @32 = land if
-    lenght inc32
+  snake x+ @int fruit x+ @int =
+  snake y+ @int fruit y+ @int = land if
+    lenght ++
     new-fruit
   end
 end
 
 // Draw a 8 x 8 rectangle in a given coord
 proc draw-rect int int in
-  memory x sizeof(u32) end
-  memory y sizeof(u32) end
-  y !32 x !32
+  memory x sizeof(int) end
+  memory y sizeof(int) end
+  y !int x !int
   8 8
-  y @32 8 *
-  x @32 8 *
+  y @int 8 *
+  x @int 8 *
   rect
 end
 
@@ -144,16 +147,16 @@ end
 proc snake-draw in
   0x0004 $DRAW_COLORS cast(ptr) !16
 
-  snake x+ @32
-  snake y+ @32
+  snake x+ @int
+  snake y+ @int
   draw-rect
 
   0x0043 $DRAW_COLORS cast(ptr) !16
 
-  snake-end snake 
-  while snake+ over over ptr> do 
-    dup  cast(ptr) x+ @32
-    over cast(ptr) y+ @32  draw-rect
+  @snake-end snake 
+  while snake++ over over ptr> do 
+    dup  cast(ptr) x+ @int
+    over cast(ptr) y+ @int draw-rect
   end drop drop
 end
 
@@ -161,18 +164,18 @@ end
 proc fruit-draw in
   0x4320 $DRAW_COLORS cast(ptr) !16
   1 8 8 
-  fruit y+ @32 8 *
-  fruit x+ @32 8 *
+  fruit y+ @int 8 *
+  fruit x+ @int 8 *
   fruit-sprite
   blit
 end
 
 // Gameloop
 proc update in
-  frame-count inc32
+  frame-count ++
 
   // Only do checks and updates every 5 frames
-  frame-count @32 5 % 0 = if
+  frame-count @int 5 % 0 = if
     check-keys
     check-fruit
     snake-update
