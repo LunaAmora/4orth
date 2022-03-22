@@ -31,7 +31,17 @@ jobs:
           unzip w4-linux.zip
           rm -f w4-linux.zip
           
+      - name: Cache porth
+        id: cache-porth
+        uses: actions/cache@v3
+        with:
+          path: |
+            porth/porth
+            porth/std
+          key: ${{ runner.os }}-porth-lib
+          
       - name: Bootstrap Porth
+        if: steps.cache-porth.outputs.cache-hit != 'true'
         run: |
           git clone https://gitlab.com/tsoding/porth.git
           cd porth
@@ -44,7 +54,7 @@ jobs:
         run: ./porth/porth -I ./porth/std com 4orth.porth
         
       - name: Test Compilation
-        run: ./4orth -I ./porth/std com -b -opt -wat ./example/snake-example.porth
+        run: ./4orth -I ./porth/std com -b -opt -wat ./example/hello-wasm.porth
       
       - name: Persist build 
         uses: actions/upload-artifact@v3
@@ -56,7 +66,7 @@ jobs:
             wasm4.porth
       
       - name: Test html Bundle 
-        run:  ./w4 bundle ./example/snake-example.wasm --title "Snake Example" --html index.html
+        run:  ./w4 bundle ./example/hello-wasm.wasm --title "Hello Porth!" --html index.html
       
       - name: Persit Html
         uses: actions/upload-artifact@v3
