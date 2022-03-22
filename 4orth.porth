@@ -2429,6 +2429,22 @@ in
         else dup INTRINSIC_DROP = if*
           1 token const-expect-arity
           const-stack-pop drop drop
+        else dup INTRINSIC_SHL = if*
+          2 token const-expect-arity
+          // TODO: `shl` intrinsic ignores the types in compile time evaluation
+          const-stack-pop swap drop
+          const-stack-pop swap drop
+          swap
+          shl
+          DATATYPE_INT swap const-stack-push
+        else dup INTRINSIC_SHR = if*
+          2 token const-expect-arity
+          // TODO: `shr` intrinsic ignores the types in compile time evaluation
+          const-stack-pop swap drop
+          const-stack-pop swap drop
+          swap
+          shr
+          DATATYPE_INT swap const-stack-push
         else
           token Token.loc ptr+ eputloc ": ERROR: intrinsic `" eputs token Token.value ptr+ @Str eputs "` is not supported in compile time evaluation\n" eputs
           1 exit
