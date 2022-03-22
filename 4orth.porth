@@ -513,6 +513,7 @@ const DATATYPE_INT  1 offset end
 const DATATYPE_PTR  1 offset end
 const DATATYPE_BOOL 1 offset end
 const DATATYPE_ADDR 1 offset end
+const DATATYPE_CSTR  1 offset end
 const COUNT_DATATYPES  reset end
 
 const HUMAN_SINGULAR 1 offset end
@@ -596,7 +597,7 @@ proc datatype-by-name
 in
   memory name sizeof(Str) end
   name !Str
-  assert "Exhaustive handling of data types in datatype-by-name" COUNT_DATATYPES 4 = end
+  assert "Exhaustive handling of data types in datatype-by-name" COUNT_DATATYPES 5 = end
        name @Str "ptr"  streq if  DATATYPE_PTR  true
   else name @Str "bool" streq if* DATATYPE_BOOL true
   else name @Str "int"  streq if* DATATYPE_INT  true
@@ -609,7 +610,7 @@ proc datatype-name
   --
   int ptr
 in
-  assert "Exhaustive handling of data types in datatype-name" COUNT_DATATYPES 4 = end
+  assert "Exhaustive handling of data types in datatype-name" COUNT_DATATYPES 5 = end
        dup DATATYPE_INT  = if  drop "int"
   else dup DATATYPE_BOOL = if* drop "bool"
   else dup DATATYPE_PTR  = if* drop "ptr"
@@ -658,7 +659,7 @@ const INTRINSIC_LOAD32    1 offset end
 const INTRINSIC_STORE32   1 offset end
 const INTRINSIC_LOAD64    1 offset end
 const INTRINSIC_STORE64   1 offset end
-assert "Exhaustive cast intrinsic definition" COUNT_DATATYPES 4 = end
+assert "Exhaustive cast intrinsic definition" COUNT_DATATYPES 5 = end
 const INTRINSIC_CAST_PTR  1 offset end
 const INTRINSIC_CAST_INT  1 offset end
 const INTRINSIC_CAST_BOOL 1 offset end
@@ -807,7 +808,7 @@ end
 // TODO: make conditional and unconditional jumps jump by relative address
 // This will make the code more relocatable which will make it easily inlinable
 
-assert "Exhaustive push IR instructions definition for data types. For each data type we must have a corresponding OP_PUSH_<TYPE> instruction." COUNT_DATATYPES 4 = end
+assert "Exhaustive push IR instructions definition for data types. For each data type we must have a corresponding OP_PUSH_<TYPE> instruction." COUNT_DATATYPES 5 = end
 // OP_PUSH_INT: Push an integer onto the data stack.
 //
 // operand type:    int
@@ -2351,7 +2352,7 @@ in
       DATATYPE_INT token Token.value ptr+ @64 const-stack-push
     else token Token.type ptr+ @64 TOKEN_WORD = if*
       token Token.value ptr+ @Str intrinsic-by-name if
-        assert "Exhaustive handling of casts in eval-const-value" COUNT_DATATYPES 4 = end
+        assert "Exhaustive handling of casts in eval-const-value" COUNT_DATATYPES 5 = end
         dup INTRINSIC_CAST_PTR = if
           1 token const-expect-arity
           const-stack-pop
@@ -2491,6 +2492,8 @@ in
           1 exit
         end
       drop
+    else token Token.type ptr+ @64 TOKEN_CSTR = if*
+      DATATYPE_CSTR token Token.value ptr+ @Str strlit-define const-stack-push
     else
       token Token.loc ptr+                                    eputloc
       ": ERROR: "                                             eputs
@@ -3579,7 +3582,7 @@ in
                   push-op
                 else drop dup @Str const-lookup dup NULL ptr!= if*
                   dup Const.type ptr+ @int
-                  assert "Exhaustive handling of data types in Const compilation\n" COUNT_DATATYPES 4 = end
+                  assert "Exhaustive handling of data types in Const compilation\n" COUNT_DATATYPES 5 = end
                   dup DATATYPE_INT = if
                     drop OP_PUSH_INT
                   else dup DATATYPE_BOOL = if*
@@ -3588,6 +3591,8 @@ in
                     drop OP_PUSH_PTR
                   else dup DATATYPE_ADDR = if*
                     drop OP_PUSH_ADDR
+                  else dup DATATYPE_CSTR = if*
+                    drop OP_PUSH_CSTR
                   else
                     drop 0
                     here eputs ": unreachable\n" eputs

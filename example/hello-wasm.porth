@@ -4,8 +4,8 @@ memory frame-count sizeof(int) end
 memory prev-state  sizeof(u8)  end
 
 memory string sizeof(ptr) end
-memory str1 sizeof(ptr) end
-memory str2 sizeof(ptr) end
+const str1 "Hello Wasm!"c  end
+const str2 "Hello Porth!"c end
 
 memory coord sizeof(int) 2 * end
 inline proc get-coord -- int int in coord @int coord 32 ptr+ @int end
@@ -22,8 +22,7 @@ end
 
 proc main in
   0x000000 $PALETTE0 cast(ptr) !int
-  "Hello Wasm!"c dup str1 !ptr string !ptr
-  "Hello Porth!"c    str2 !ptr
+  str1 string !ptr
   rnd-coord
 end
 
@@ -35,7 +34,7 @@ proc check-keys in
   prev-state !8
 
   0 != if 
-    2 rnd 1 = if str1 else str2 end  @ptr string !ptr
+    2 rnd 1 = if str1 else str2 end string !ptr
     0xffffff rnd $PALETTE2 cast(ptr) !int
     rnd-coord
   end
