@@ -71,7 +71,11 @@ proc hex-digit int -- int bool in
   end
 end
 
-proc try-parse-hex int ptr -- int bool in
+proc try-parse-hex
+  int ptr 
+  -- 
+  int bool 
+in
   let n s in
     2 s "0x" streq
     dup if
@@ -115,4 +119,51 @@ in
   
   tmp-end path @ptr ptr-diff
   path @ptr
+end
+
+proc bputhexchar int ptr in
+  let bfd in 
+    dup  
+    '0' >  over
+    '9' <= land if 
+    '0' -  bfd  bputu else
+    @hex   bfd  bputs end
+  end
+end
+
+proc bputhexint int ptr in
+  let bfd in
+    char-to-hex     
+    over 1 > if
+      dup @8
+      bfd bputhexchar 
+      inc-Str 
+    else  
+      "0" 
+      bfd bputs
+    end   
+    @8 
+    bfd bputhexchar 
+    drop 
+  end
+end
+
+proc bputwatstr
+  int ptr
+  ptr
+in
+  let bfd in
+    "\""       bfd bputs
+    while over 0 > do 
+      dup @8
+      char-to-hex
+      "\\"     bfd bputs
+      while over 0 > do
+        dup @8 bfd bputhexchar
+        inc-Str
+      end drop drop
+      inc-Str
+    end "\""   bfd bputs
+  end
+  drop drop
 end
