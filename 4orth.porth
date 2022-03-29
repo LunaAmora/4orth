@@ -22,12 +22,13 @@ proc generate-op-comment ptr ptr in
   end
 end
 
-const wat-mem-start 6560    offset end // 0x19a0
-const wat-dat-stack 64 64 * offset end // 0x29a0
-const wat-str-start reset end
+const wat-string-section  6560    end // 0x19a0
+const sizeof(wasm4-cart)  65535   end // 0xffff
+const sizeof(porth-stack) 64 64 * end // 0x1000
 
-memory wat-global-mem sizeof(int) end 
+const wat-porth-stack sizeof(wasm4-cart) sizeof(porth-stack) - end
 
+memory wat-global-mem sizeof(int) end
 memory skip-inline sizeof(bool) end
 memory skip-op sizeof(int) end
 
@@ -447,7 +448,7 @@ in
         1 +
       end drop
       
-      "\n(global $DATA_STACK i32 (i32.const " bfd bputs wat-dat-stack bfd bputu "))\n" bfd bputs
+      "\n(global $DATA_STACK i32 (i32.const " bfd bputs wat-porth-stack bfd bputu "))\n" bfd bputs
 
       0 while dup strlits-count @64 < do
         let i in
@@ -456,7 +457,7 @@ in
             str ?str-empty lnot if
               "(global $str"     bfd bputs i bfd bputu
               " i32 (i32.const " bfd bputs
-              char-counter @int  wat-str-start + bfd bputu
+              char-counter @int  wat-string-section + bfd bputu
               "))\n"             bfd bputs
               char-counter @int  str @Str drop + char-counter !int
             end
@@ -465,10 +466,16 @@ in
         end
       end drop
 
-      wat-str-start
+      wat-string-section
       char-counter @int
       64 / 1 + 64 * + 
       wat-global-mem !int
+
+      global-memory-capacity @int wat-global-mem @int + wat-porth-stack > if
+        "[ERROR] global memory size exceeds the limits\n" eputs
+        "[INFO] use ./4orth summary to view more details\n" puts
+        1 exit
+      end
 
       "\n(func $dup (local i32)\n"                     bfd bputs
       "  call $pop  local.tee 0\n"                     bfd bputs
@@ -577,7 +584,7 @@ in
         1 +
       end drop
 
-      "\n(data (i32.const " bfd bputs wat-str-start bfd bputu ")\n" bfd bputs
+      "\n(data (i32.const " bfd bputs wat-string-section bfd bputu ")\n" bfd bputs
       
       0 while dup strlits-count @64 < do
         let i in
