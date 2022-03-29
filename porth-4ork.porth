@@ -2115,7 +2115,7 @@ in
 
   lexer_ @ptr prok Proc.ins ptr+ parse-proc-contract-list if
     token Token.loc ptr+ eputloc
-    ": ERROR: bikeshedder are not supported in imported procedures" eputs
+    ": ERROR: bikeshedder is not supported in imported procedures" eputs
     1 exit
   end
 
@@ -2448,6 +2448,18 @@ in
           token Token.value ptr+
 
           let type loc value in
+          
+            inside-proc @bool if
+              current-proc Proc.imported ptr+ @bool if
+                type  @int TOKEN_KEYWORD = 
+                value @int KEYWORD_END   = land lnot if
+                  loc eputloc
+                  ": ERROR: Imported procs must have an empty body\n" eputs
+                  1 exit
+                end
+              end
+            end
+
             type @int TOKEN_INT = if
               inside-proc @bool lnot if
                 loc                                                  eputloc
@@ -4324,53 +4336,52 @@ in
 
   context TypeContext.stack ptr+ TypeStack.count ptr+ @int
   context TypeContext.outs ptr+  TypeStack.count ptr+ @int
-    over over > if
-      context TypeContext.block-start-ip ptr+ @int sizeof(Op) * ops +ptr
-        dup Op.type ptr+ @int OP_WHILE = if
-          dup Op.token ptr+ Token.loc ptr+ eputloc
-          dup Op.type ptr+ @int
-            ": ERROR: Unhandled data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations. Here are the elements currently on the stack:\n" eputs
-          drop
-        else dup Op.type ptr+ @int OP_PREP_PROC = if*
-          dup Op.token ptr+ Token.loc ptr+ eputloc
-          dup Op.type ptr+ @int
-            ": ERROR: Unhandled data on the stack at the end of the procedure. The expected elements on the stack are listed after the `--` operator. Here are the elements currently on the stack:\n" eputs
-          drop
-        else
-          here               eputs
-          ": unreachable "   eputs
-          69 exit
-        end
-      drop
-      context TypeContext.stack ptr+ stderr type-stack-dump
+  context TypeContext.block-start-ip ptr+ @int sizeof(Op) * ops +ptr
+  let stack outs op in 
+    stack outs != if
+      op Op.token ptr+ Token.text ptr+ @Str
+      proc-lookup-by-name Proc.imported ptr+ @bool if
+      else stack outs > if*
+          op Op.type ptr+ @int OP_WHILE = if
+            op Op.token ptr+ Token.loc ptr+ eputloc
+            op Op.type ptr+ @int
+              ": ERROR: Unhandled data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations. Here are the elements currently on the stack:\n" eputs
+            drop
+          else op Op.type ptr+ @int OP_PREP_PROC = if*
+            op Op.token ptr+ Token.loc ptr+ eputloc
+            op Op.type ptr+ @int
+              ": ERROR: Unhandled data on the stack at the end of the procedure. The expected elements on the stack are listed after the `--` operator. Here are the elements currently on the stack:\n" eputs
+            drop
+          else
+            here               eputs
+            ": unreachable "   eputs
+            69 exit
+          end
+        context TypeContext.stack ptr+ stderr type-stack-dump
 
-      1 exit
+        1 exit
+      else stack outs < if*
+          op Op.type ptr+ @int OP_WHILE = if
+            op Op.token ptr+ Token.loc ptr+ eputloc
+            op Op.type ptr+ @int
+              ": ERROR: Insufficient data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations. Here are the elements currently on the stack:\n" eputs
+            drop
+          else op Op.type ptr+ @int OP_PREP_PROC = if*
+            op Op.token ptr+ Token.loc ptr+ eputloc
+            op Op.type ptr+ @int
+              ": ERROR: Insufficient data on the stack at the end of the procedure. The expected elements on the stack are listed after the `--` operator. Here are the elements currently on the stack:\n" eputs
+            drop
+          else
+            here               eputs
+            ": unreachable "   eputs
+            69 exit
+          end
+        context TypeContext.outs ptr+ stderr type-stack-dump
+
+        1 exit
+      end
     end
-
-    over over < if
-      context TypeContext.block-start-ip ptr+ @int sizeof(Op) * ops +ptr
-        dup Op.type ptr+ @int OP_WHILE = if
-          dup Op.token ptr+ Token.loc ptr+ eputloc
-          dup Op.type ptr+ @int
-            ": ERROR: Insufficient data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations. Here are the elements currently on the stack:\n" eputs
-          drop
-        else dup Op.type ptr+ @int OP_PREP_PROC = if*
-          dup Op.token ptr+ Token.loc ptr+ eputloc
-          dup Op.type ptr+ @int
-            ": ERROR: Insufficient data on the stack at the end of the procedure. The expected elements on the stack are listed after the `--` operator. Here are the elements currently on the stack:\n" eputs
-          drop
-        else
-          here               eputs
-          ": unreachable "   eputs
-          69 exit
-        end
-      drop
-      context TypeContext.outs ptr+ stderr type-stack-dump
-
-      1 exit
-    end
-  drop
-  drop
+  end
   type-frame-pool-count !int
 end
 

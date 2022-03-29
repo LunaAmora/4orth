@@ -268,9 +268,10 @@ in
                   " call $push"        bfd bputs
                   " end\n"             bfd bputs
               else operand INTRINSIC_PRINT = if*
-                  // " call $drop"        bfd bputs
-                  here puts ": FIXME: not implemented yet\n" puts
-                  1 exit
+                  " call $pop"         bfd bputs
+                  " call $f"           bfd bputs
+                  "trace"              proc-lookup-by-name 
+                  Proc.addr ptr+ @int  bfd bputu
               else operand INTRINSIC_EQ = if*
                   " call $pop"         bfd bputs
                   " call $pop"         bfd bputs

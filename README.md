@@ -72,8 +72,9 @@ This inline proc for example returns two ints between 0 and 20.
 
 - Import proc
 ```porth
-import proc trace ptr in drop end
+import proc trace ptr in end
 ```
-This adds the ability to call the wasm-4 `trace` function via the defined proc contract. Anything in the body of the proc is ignored.
+This adds the ability to call the wasm-4 `trace` function via the defined proc contract. (Porth's `print` intrinsic calls this imported proc, you can use either of them to log to the console)
+Imported procs must have an empty body and no return type.
 
 All available [functions](https://wasm4.org/docs/reference/functions), constants and the [memory map](https://wasm4.org/docs/reference/memory) from Wasm-4 are in the [wasm4.porth](./wasm4.porth) library.

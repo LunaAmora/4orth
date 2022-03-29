@@ -9,29 +9,30 @@ include "core.porth"
 // │                                                                           │
 // └───────────────────────────────────────────────────────────────────────────┘
 // Copies pixels to the framebuffer.
-import proc blit int int int int int ptr in drop drop drop drop drop drop end
+import proc blit int int int int int ptr in end
 
 // Copies a subregion within a larger sprite atlas to the framebuffer.
-import proc blitSub int int int int int int int int ptr in drop drop drop drop drop drop drop drop drop end
+import proc blitSub int int int int int int int int ptr in end
 
 // Draws a line between two points.
-import proc line int int int int in drop drop drop drop end
+import proc line int int int int in end
 
 // Draws a horizontal line.
-import proc hline int int int in drop drop drop end
+import proc hline int int int in end
 
 // Draws a vertical line.
-import proc vline int int int in drop drop drop end
+import proc vline int int int in end
 
 // Draws an oval (or circle).
-import proc oval int int int int in drop drop drop drop end
+import proc oval int int int int in end
 
 // Draws a rectangle.
-import proc rect int int int int in drop drop drop drop end
+import proc rect int int int int in end
 
 // Draws text using the built-in system font.
-import proc textUtf8 int int int int in drop drop drop drop end
-import proc text int int ptr in drop drop drop end
+import proc text int int ptr in end
+import proc textUtf8 int int int int in end
+import proc textUtf16 int int int int in end
 
 // ┌───────────────────────────────────────────────────────────────────────────┐
 // │                                                                           │
@@ -39,7 +40,7 @@ import proc text int int ptr in drop drop drop end
 // │                                                                           │
 // └───────────────────────────────────────────────────────────────────────────┘
 // Plays a sound tone.
-import proc tone int int int int in drop drop drop drop end
+import proc tone int int int int in end
 
 // ┌───────────────────────────────────────────────────────────────────────────┐
 // │                                                                           │
@@ -47,15 +48,15 @@ import proc tone int int int int in drop drop drop drop end
 // │                                                                           │
 // └───────────────────────────────────────────────────────────────────────────┘
 // Reads up to `size` bytes from persistent storage into the pointer `dest`.
-import proc diskr int ptr in drop drop end
+import proc diskr int ptr in end
 
 // Writes up to `size` bytes from the pointer `src` into persistent storage.
-import proc diskw int ptr in drop drop end
+import proc diskw int ptr in end
 
 // Prints a message to the debug console.
-import proc traceUtf16 int ptr in drop drop end
-import proc traceUtf8 int ptr in drop drop end
-import proc trace ptr in drop end
+import proc trace ptr in end
+import proc traceUtf8 int ptr in end
+import proc traceUtf16 int ptr in end
 
 // ┌───────────────────────────────────────────────────────────────────────────┐
 // │                                                                           │
