@@ -104,7 +104,7 @@ in
           else type OP_PUSH_GLOBAL_MEM = if*
              " i32.const "      bfd bputs operand bfd bputu
              " i32.const "      bfd bputs wat-global-mem @int bfd bputu
-             " i32.add "        bfd bputs 
+             " i32.add"         bfd bputs 
              " call $push"      bfd bputs
           else type OP_PUSH_STR = if*
              " i32.const "      bfd bputs op Op.token ptr+ Token.value ptr+ @Str drop bfd bputu
@@ -225,8 +225,8 @@ in
                   " call $divmod"     bfd bputs
               else operand INTRINSIC_MAX = if*
                   " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
                   " f32.convert_i32_u" bfd bputs
+                  " call $pop"         bfd bputs
                   " f32.convert_i32_u" bfd bputs
                   " f32.max "          bfd bputs
                   " i32.trunc_f32_u"   bfd bputs
@@ -354,9 +354,6 @@ in
               else operand INTRINSIC_CAST_PTR = if*
               else operand INTRINSIC_CAST_INT = if*
               else operand INTRINSIC_CAST_BOOL = if*
-                  " call $pop"         bfd bputs
-                  " i32.eqz i32.eqz"      bfd bputs
-                  " call $push"        bfd bputs
               else operand INTRINSIC_CAST_ADDR = if*
               else operand INTRINSIC_SYSCALL0 = if*
               else operand INTRINSIC_SYSCALL1 = if*
@@ -484,7 +481,7 @@ in
       "main" proc-lookup-by-name
       let main-proc in
         main-proc NULL ptr= if
-          here eputs ": Assertion Failed: type checking phase did not check the existence of `main` procedure" eputs
+          here eputs ": Assertion Failed: type checking phase did not check the existence of `main` procedure\n" eputs
           1 exit
         end
 
@@ -497,7 +494,7 @@ in
       "update" proc-lookup-by-name
       let update-proc in
         update-proc NULL ptr= if
-          here eputs ": Assertion Failed: `update` procedure is missing" eputs
+          here eputs ": Assertion Failed: `update` procedure is missing\n" eputs
           1 exit
         end
 
