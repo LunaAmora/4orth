@@ -40,7 +40,6 @@ proc check-keys in
   end
 end
 
-
 proc update in frame-count ++
   frame-count @int 5 % 0 = if
     check-keys
