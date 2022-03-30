@@ -63,7 +63,7 @@ Porth operations:
 - Xor Intrinsic
 - Hexadecimal numbers
 - Bit shift support in const evaluation
-- Null terinated string support in const evaluation
+- Null terminated string support in const evaluation
 - Baked in random number generator (will be removed once there is float and int64 support).
 ```porth
 inline proc rnd-coord -- int int in 20 rnd 20 rnd end
