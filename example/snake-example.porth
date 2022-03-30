@@ -61,16 +61,16 @@ end
 
 // Change snake direction based on input xdir and ydir.
 //If value is 1 it's positive, otherwise it's negative
-proc snake-dir int int in
-  dup 0 != dirx @int 0 = land if
+proc snake-dir int int in 
+  dup 
+  0 != dirx @int 0 = land if
       dirx !int
     0 diry !int drop
-  else drop
-    dup 0 != diry @int 0 = land if
+  else drop dup 
+  0 != diry @int 0 = land if*
         diry !int
       0 dirx !int
-    else drop end
-  end
+  else drop end
 end
 
 // Compare current pressed keys with keys pressed in the last checked frame and calls snake-dir
@@ -82,14 +82,14 @@ proc check-keys in
   prev-state !8
 
   dup 0 != if dup
-    $BUTTON_UP    and 0 != if 2
+    $BUTTON_UP    and 0 != if  2
     0 else dup
-    $BUTTON_DOWN  and 0 != if 1
+    $BUTTON_DOWN  and 0 != if* 1
     0 else 0 over
-    $BUTTON_RIGHT and 0 != if 1 
+    $BUTTON_RIGHT and 0 != if* 1 
     else over
-    $BUTTON_LEFT  and 0 != if 2
-    else 0 end end end end 
+    $BUTTON_LEFT  and 0 != if* 2
+    else 0 end 
     snake-dir drop
   else drop end
 end
@@ -113,12 +113,10 @@ proc snake-update in
     snake x+ @int dirx @int
     clamp-wrap
     snake x+ !int
-  else 
-    diry @int 0 != if
-      snake y+ @int diry @int
-      clamp-wrap
-      snake y+ !int
-    end
+  else diry @int 0 != if*
+    snake y+ @int diry @int
+    clamp-wrap
+    snake y+ !int
   end
 end
 

@@ -48,7 +48,6 @@ Use `-opt` to benefit from [binaryen](https://github.com/WebAssembly/binaryen) o
 - Negative numbers
 
 Porth operations:
-- OP_IFSTAR
 - OP_BIND_LET
 - OP_BIND_PEEK
 - OP_PUSH_BIND

@@ -32,6 +32,14 @@ memory wat-global-mem sizeof(int) end
 memory skip-inline sizeof(bool) end
 memory skip-op sizeof(int) end
 
+memory ifstar-layers  sizeof(int) sizeof(int) * end
+memory ifstar-current sizeof(int) end
+
+inline proc @ifstar-count -- int in ifstar-layers ifstar-current @int sizeof(int) * ptr+ @int end
+inline proc !ifstar-count    int in ifstar-layers ifstar-current @int sizeof(int) * ptr+ !int end
+inline proc ifstar-count.inc     in @ifstar-count 1 + !ifstar-count end
+inline proc ifstar-count.dec     in @ifstar-count 1 - !ifstar-count end
+
 proc generate-op-wat
   int // ip
   ptr // bfd
@@ -118,26 +126,33 @@ in
              " global.get $str" bfd bputs operand bfd bputu
              " call $push"      bfd bputs
           else type OP_IF = if*
-             " call $pop"   bfd bputs
-             " if" bfd bputs
+              ifstar-current inc64
+             " call $pop"       bfd bputs
+             " if"              bfd bputs
           else type OP_IFSTAR = if*
-             here puts ": FIXME: not implemented yet\n" puts
-             1 exit
+             ifstar-count.inc
+             " call $pop"       bfd bputs
+             " if"              bfd bputs
           else type OP_ELSE = if*
-             " else" bfd bputs
+             " else"            bfd bputs
           else type OP_END_WHILE = if*
-             " br $" bfd bputs operand 1 + bfd bputu
-             " end"  bfd bputs
-             " end"  bfd bputs
+             " br $"            bfd bputs operand 1 + bfd bputu
+             " end"             bfd bputs
+             " end"             bfd bputs
           else type OP_END_IF = if*
-             " end" bfd bputs
+             while @ifstar-count 0 > do
+                " end" bfd bputs
+                ifstar-count.dec
+             end ifstar-current dec64
+
+             " end"             bfd bputs
           else type OP_WHILE = if*
-             " block $while" bfd bputs 
-             " loop $"       bfd bputs operand bfd bputu
+             " block $while"    bfd bputs 
+             " loop $"          bfd bputs operand bfd bputu
           else type OP_DO = if*
-             " call $pop"    bfd bputs
-             " i32.eqz"      bfd bputs
-             " br_if $while" bfd bputs
+             " call $pop"       bfd bputs
+             " i32.eqz"         bfd bputs
+             " br_if $while"    bfd bputs
           else type OP_PREP_PROC = if*
               op Op.token ptr+ Token.text ptr+ dup @Str proc-lookup-by-name
               let name prok in
@@ -366,8 +381,8 @@ in
               false skip-inline !bool
             end
           else
-            op bfd generate-op-comment
-            // "\n" bfd bputs
+            // op bfd generate-op-comment
+            "\n" bfd bputs
           end
         end
       end
@@ -579,6 +594,7 @@ in
         end
       end
       
+      0 ifstar-current !int
       0 while dup ops-count @64 < do
         dup bfd generate-op-wat
         1 +
