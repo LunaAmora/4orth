@@ -584,22 +584,24 @@ in
         1 +
       end drop
 
-      "\n(data (i32.const " bfd bputs wat-string-section bfd bputu ")\n" bfd bputs
-      
-      0 while dup strlits-count @64 < do
-        let i in
-          i sizeof(Str) * strlits +ptr
-          let str in
-            str ?str-empty lnot if
-              "  "     bfd bputs
-              str @Str bfd bputwatstr
+      strlits-count @64 0 > if
+        "\n(data (i32.const " bfd bputs wat-string-section bfd bputu ")\n" bfd bputs
+        
+        0 while dup strlits-count @64 < do
+          let i in
+            i sizeof(Str) * strlits +ptr
+            let str in
+              str ?str-empty lnot if
+                "  "     bfd bputs
+                str @Str bfd bputwatstr
+              end
             end
+            "\n" bfd bputs
+            i 1 +
           end
-          "\n" bfd bputs
-          i 1 +
-        end
-      end drop
-      ")" bfd bputs
+        end drop
+        ")" bfd bputs
+      end
 
       bfd bflush
       fd close drop
