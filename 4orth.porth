@@ -616,9 +616,9 @@ in
         1 +
       end drop
       
-      "\n(table "        bfd bputs 
-      proc-index @64 1 - bfd bputu 
-      " funcref)\n"      bfd bputs
+      "\n(table "    bfd bputs 
+      proc-index @64 bfd bputu 
+      " funcref)\n"  bfd bputs
 
       strlits-count @64 0 > if
         "\n(data (i32.const " bfd bputs wat-string-section bfd bputu ")\n" bfd bputs
