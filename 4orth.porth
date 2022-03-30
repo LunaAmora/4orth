@@ -32,7 +32,14 @@ memory wat-global-mem sizeof(int) end
 memory skip-inline sizeof(bool) end
 memory skip-op sizeof(int) end
 
-memory ifstar-layers  sizeof(int) sizeof(int) * end
+memory proc-layers sizeof(int) OPS_CAP * end
+memory proc-index  sizeof(int) end
+
+inline proc proc-get  int -- int in sizeof(int) * proc-layers +ptr @int end
+inline proc proc-set  int        in proc-index @int sizeof(int) * proc-layers +ptr !int end
+inline proc proc-iota int -- int in proc-set   proc-index @int proc-index inc64 end
+
+memory ifstar-layers  sizeof(int) sizeof(int) * 8 * end
 memory ifstar-current sizeof(int) end
 
 inline proc @ifstar-count -- int in ifstar-layers ifstar-current @int sizeof(int) * ptr+ @int end
@@ -67,11 +74,18 @@ in
              " i32.const "   bfd bputs operand bfd bputu
              " call $push"   bfd bputs
           else type OP_PUSH_ADDR = if*
-             here puts ": FIXME: not implemented yet\n" puts
-             1 exit
+             " i32.const "   bfd bputs
+             proc-index @int while dup 0 >= over proc-get operand != land do
+              1 -
+             end bfd bputu
+             " call $push"   bfd bputs
+            //  here puts ": FIXME: not implemented yet\n" puts
+            //  1 exit
           else type OP_CALL_LIKE = if*
-             here puts ": FIXME: not implemented yet\n" puts
-             1 exit
+             " call $pop"              bfd bputs
+             " call_indirect (type 0)" bfd bputs
+            //  here puts ": FIXME: not implemented yet\n" puts
+            //  1 exit
           else type OP_BIND_LET = if*
              here puts ": FIXME: not implemented yet\n" puts
              1 exit
@@ -167,14 +181,16 @@ in
                   true skip-inline !bool
                 else
                   false skip-inline !bool
-                  "\n(func $f" bfd bputs ip bfd bputu                  
+                  "\n(elem (i32.const " bfd bputs ip proc-iota bfd bputu 
+                  ") $f"                bfd bputs ip bfd bputu 
+                  ")\n(func $f"         bfd bputs ip bfd bputu
                   operand 0 > if
-                    " (local"  bfd bputs 
+                    " (local"           bfd bputs 
                     operand 0 while over over > do
-                      " i32"  bfd bputs
+                      " i32"            bfd bputs
                       sizeof(u64) +
-                    end  drop drop
-                    ")"  bfd bputs
+                    end drop drop
+                    ")"                 bfd bputs
                   end
                 end
               end
@@ -381,8 +397,8 @@ in
               false skip-inline !bool
             end
           else
-            // op bfd generate-op-comment
-            "\n" bfd bputs
+            op bfd generate-op-comment
+            // "\n" bfd bputs
           end
         end
       end
@@ -462,7 +478,7 @@ in
         dup bfd generate-wat-imports
         1 +
       end drop
-      
+
       "\n(global $DATA_STACK i32 (i32.const " bfd bputs wat-porth-stack bfd bputu "))\n" bfd bputs
 
       0 while dup strlits-count @64 < do
@@ -599,6 +615,10 @@ in
         dup bfd generate-op-wat
         1 +
       end drop
+      
+      "\n(table "        bfd bputs 
+      proc-index @64 1 - bfd bputu 
+      " funcref)\n"      bfd bputs
 
       strlits-count @64 0 > if
         "\n(data (i32.const " bfd bputs wat-string-section bfd bputu ")\n" bfd bputs

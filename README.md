@@ -52,8 +52,6 @@ Porth operations:
 - OP_BIND_PEEK
 - OP_PUSH_BIND
 - OP_UNBIND
-- OP_PUSH_ADDR
-- OP_CALL_LIKE
 
 ### Changes
 
