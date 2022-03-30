@@ -25,9 +25,9 @@ $ ./4orth com game.porth
 ...
 ... compilation logs ...
 ...
-$ ./w4 run game.wasm
+$ w4 run game.wasm
         <or>
-$ ./w4 bundle --linux game game.wasm
+$ w4 bundle --linux game game.wasm
 $ ./game
 ```
 
