@@ -646,6 +646,49 @@ in
   end
 end
 
+proc sprite-template in
+  memory bfd sizeof(Bfd) end
+  sizeof(Bfd) 0 bfd memset drop
+
+  "/tmp/tmptemplate"c
+  let file-path in
+    silent @bool lnot if
+      "[INFO] Generating Wasm4 sprite template "  puts
+      file-path cstr-to-str puts
+      "\n"                  puts
+    end
+
+    420                            // mode
+    O_CREAT O_WRONLY or O_TRUNC or // flags
+    file-path                      // pathname
+    AT_FDCWD
+    openat
+
+    BFD_CAP tmp-alloc
+    let fd buff in
+      fd   bfd Bfd.fd  ptr+ !int
+      buff bfd Bfd.buff ptr+ !ptr
+
+      fd 0 < if
+        "[ERROR] could not open file\n" eputs
+        1 exit
+      end
+
+      "{{#sprites}}\n"                             bfd bputs
+      "// {{name}} sprite\n"                       bfd bputs
+      "const {{name}}-sprite \"{{bytes}}\"c end\n" bfd bputs
+      "const {{name}}-flags  {{flags}} end\n"      bfd bputs
+      "const {{name}}-height {{height}} end\n"     bfd bputs
+      "const {{name}}-width  {{width}} end\n\n"    bfd bputs
+      "{{/sprites}}"                               bfd bputs
+
+      bfd bflush
+      fd close drop
+      buff tmp-rewind
+    end
+  end
+end
+
 proc usage
   ptr // program name
   int // fd
@@ -667,6 +710,7 @@ in
     "    dump <file>           Dump the ops of the program\n"                                  fd fputs
     "    lex <file>            Produce lexical analysis of the file\n"                         fd fputs
     "    summary <file>        Print the summary of the program\n"                             fd fputs
+    "    png2src <file>        Uses w4 to convert a png file to Porth code and prints it\n"    fd fputs
     "    help                  Print this help to stdout and exit with 0 code\n"               fd fputs
   end
 end
@@ -919,6 +963,45 @@ proc main in
     unsafe @bool lnot if type-check-program end
 
     summary
+  else args @@ptr "png2src"c cstreq if*
+    args sizeof(ptr) inc64-by
+
+    args @@ptr NULL ptr= if
+      program @ptr stderr usage
+      "ERROR: no input file is provided for the `png2src` subcommand\n" eputs
+      1 exit
+    end
+
+    args @@ptr input-file-path-cstr !ptr
+    input-file-path-cstr @ptr cstr-to-str remove-ext base-file-path !Str
+    args sizeof(ptr) inc64-by
+
+    sprite-template
+
+    fpb-end
+      tmp-end
+      "w4"c                 tmp-append-ptr
+      "png2src"c            tmp-append-ptr
+      "--template"c         tmp-append-ptr
+      "/tmp/tmptemplate"c   tmp-append-ptr
+      fpb-end
+        input-file-path-cstr @ptr cstr-to-str fpb-append drop
+        1                   fpb-alloc  drop
+        tmp-append-ptr
+      "-o"c                 tmp-append-ptr
+      "/tmp/tmpsprite"c     tmp-append-ptr
+      NULL          tmp-append-ptr
+      silent @bool lnot cmd-echoed
+    fpb-rewind
+
+    fpb-end
+      tmp-end
+      "sed"c                             tmp-append-ptr
+      "s/\\,\\{0,1\\}0x/\\\\\\\\/g"c     tmp-append-ptr
+      "/tmp/tmpsprite"c                  tmp-append-ptr
+      NULL          tmp-append-ptr
+      silent @bool lnot cmd-echoed
+    fpb-rewind
   else
     program @ptr stderr usage
     "ERROR: unknown subcommand `" eputs args @@ptr cstr-to-str eputs "`\n" eputs
