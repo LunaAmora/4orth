@@ -674,12 +674,12 @@ proc sprite-template in
         1 exit
       end
 
-      "{{#sprites}}\n"                             bfd bputs
+      "{{#sprites}}\n\n"                           bfd bputs
       "// {{name}} sprite\n"                       bfd bputs
       "const {{name}}-sprite \"{{bytes}}\"c end\n" bfd bputs
       "const {{name}}-flags  {{flags}} end\n"      bfd bputs
       "const {{name}}-height {{height}} end\n"     bfd bputs
-      "const {{name}}-width  {{width}} end\n\n"    bfd bputs
+      "const {{name}}-width  {{width}} end\n"      bfd bputs
       "{{/sprites}}"                               bfd bputs
 
       bfd bflush
@@ -711,6 +711,7 @@ in
     "    lex <file>            Produce lexical analysis of the file\n"                         fd fputs
     "    summary <file>        Print the summary of the program\n"                             fd fputs
     "    png2src <file>        Uses w4 to convert a png file to Porth code and prints it\n"    fd fputs
+    "        -s                Silent mode. Only print the converted code\n"                   fd fputs
     "    help                  Print this help to stdout and exit with 0 code\n"               fd fputs
   end
 end
@@ -970,6 +971,11 @@ proc main in
       program @ptr stderr usage
       "ERROR: no input file is provided for the `png2src` subcommand\n" eputs
       1 exit
+    end
+
+    args @@ptr "-s"c cstreq if
+      true silent !bool
+      args sizeof(ptr) inc64-by
     end
 
     args @@ptr input-file-path-cstr !ptr
