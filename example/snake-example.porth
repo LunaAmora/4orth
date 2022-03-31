@@ -48,7 +48,9 @@ inline proc ?movingy -- bool in snake-dir @y 0 != end
 
 // Fruit values
 memory fruit sizeof(coord) end
+
 const fruit-sprite "\\00\\a0\\02\\00\\0e\\f0\\36\\5c\\d6\\57\\d5\\57\\35\\5c\\0f\\f0"c end
+const fruit-flags $BLIT_2BPP end
 const fruit-height 8 end
 const fruit-width  8 end
 
@@ -198,7 +200,7 @@ end
 // Draws the fruit sprite
 proc fruit-draw in
   0x4320 !COLORS
-  $BLIT_2BPP 
+  fruit-flags 
   fruit-height
   fruit-width
   fruit @y sizeof(cell) *
