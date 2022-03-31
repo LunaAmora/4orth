@@ -2,130 +2,167 @@ include "wasm4.porth"
 
 // Game state
 memory frame-count sizeof(int) end
-memory prev-state sizeof(u8) end
+memory prev-state  sizeof(u8)  end
 
-// Snake variables
-memory length sizeof(int) end
-memory dirx sizeof(int) end
-memory diry sizeof(int) end
-memory snake sizeof(int) 2 * 32 * end
+inline proc frame-count++ in frame-count @int 1 + frame-count !int end
 
-// Fruit variables
-memory fruit 8 end
-memory fruit-sprite 16 end
+// Game consts
+const sizeof(coord) sizeof(int) 2 * end
+const sizeof(cell)   8 end
+const sizeof(grid)  20 end
+const delta_time     5 end 
+const SNAKE_CAP     32 end
 
 // Helper pointer offsets
-inline proc ++ ptr in inc32 end
 inline proc x+ ptr -- ptr in end 
-inline proc y+ ptr -- ptr in 4 ptr+ end 
-inline proc snake+ ptr int -- ptr in 8 * ptr+ end
-inline proc snake++ ptr -- ptr in 1 snake+ end
+inline proc y+ ptr -- ptr in sizeof(int) ptr+ end
+inline proc !x int ptr in !int end
+inline proc !y int ptr in y+ !int end
+inline proc @x ptr -- int in @int end
+inline proc @y ptr -- int in y+ @int end
+
+inline proc snake+  ptr int -- ptr in sizeof(coord) * ptr+ end
+inline proc snake++ ptr     -- ptr in 1 snake+ end
+
+// Snake values
+const snake.length sizeof(int)   offset end
+const snake.dir    sizeof(coord) offset end
+const snake.body   sizeof(coord) SNAKE_CAP * offset end
+const sizeof(snake) reset end
+
+memory snake sizeof(snake) end
+
+// Snake values setters and getters
+inline proc @snake-length -- int in snake snake.length ptr+ @int end
+inline proc !snake-length    int in snake snake.length ptr+ !int end
+inline proc length++ in @snake-length 1 + !snake-length end
+
+inline proc snake-head -- ptr in snake snake.body ptr+ end
+inline proc snake-tail -- ptr in snake-head @snake-length sizeof(coord) * ptr+ end
+
+inline proc snake-dir   -- ptr in snake snake.dir ptr+ end
+inline proc !snake-dir int int in snake-dir !y snake-dir !x end
+
+inline proc ?movingx -- bool in snake-dir @x 0 != end
+inline proc ?movingy -- bool in snake-dir @y 0 != end
+
+// Fruit values
+memory fruit sizeof(coord) end
+const fruit-sprite "\\00\\a0\\02\\00\\0e\\f0\\36\\5c\\d6\\57\\d5\\57\\35\\5c\\0f\\f0"c end
+const fruit-height 8 end
+const fruit-width  8 end
 
 // Helper inline procs
 inline proc rnd-coord -- int int in 20 rnd 20 rnd end
-inline proc new-fruit in rnd-coord fruit x+ !int fruit y+ !int end
+inline proc new-fruit in rnd-coord fruit !x fruit !y end
 inline proc ptr> ptr ptr -- bool in swap cast(int) swap cast(int) > end
 
-inline proc @gamepad   -- int in $GAMEPAD1 cast(ptr) @8 end
-inline proc @snake-end -- ptr in snake length @int 8 * ptr+ end
+// Wasm4 memory getters and setters
+inline proc !PALETTE int int in 4 % 4 * $PALETTE0 cast(ptr) +ptr !int end
+inline proc !COLORS int in $DRAW_COLORS cast(ptr) !16 end
+inline proc @GAMEPAD -- int in $GAMEPAD1 cast(ptr) @8 end
 
 // Return the wrapped snake coord around the screen given its position and direction
 inline proc clamp-wrap int int -- int in
-  1 = if   dup 19 = if drop  0 else 1 + 
-  end else dup  0 = if drop 19 else 1 - end end
+  1 = if 1 + dup
+    sizeof(grid)  = if 
+      drop 0 
+    end
+  else dup 
+    0 = if
+      drop sizeof(grid) 
+    end 1 - 
+  end
 end
 
 proc main in
   // Color palette setting
-  0x151640 $PALETTE0 cast(ptr) !int
-  0x3f6d9e $PALETTE1 cast(ptr) !int
-  0xf783b0 $PALETTE2 cast(ptr) !int
-  0xe6f2ef $PALETTE3 cast(ptr) !int
-
-  // 8 x 8 Fruit sprite in 2BPP (2 bits per pixel)
-  0x2A000     fruit-sprite !int
-  0x5C36F00E  fruit-sprite 4  ptr+ !int
-  0x57D557D6  fruit-sprite 8  ptr+ !int
-  0xF00F5C35  fruit-sprite 12 ptr+ !int
+  0x151640 0 !PALETTE
+  0x3f6d9e 1 !PALETTE
+  0xf783b0 2 !PALETTE
+  0xe6f2ef 3 !PALETTE
 
   // Initialize fruit in a random position
   new-fruit
 
   // Initialize snake body and direction
-  1 dirx           !int
-  3 length         !int
-  2 snake          !int
-  1 snake 1 snake+ !int
-  0 snake 2 snake+ !int
+  1 0 !snake-dir
+  3 !snake-length
+
+  @snake-length snake-head 
+  while over 0 > do
+    over over !x
+    10   over !y
+    swap 1 -
+    swap snake++
+  end drop drop
 end
 
 // Change snake direction based on input xdir and ydir.
-//If value is 1 it's positive, otherwise it's negative
-proc snake-dir int int in 
+// If value is 1 it's positive, otherwise it's negative
+proc input-dir int int in
   dup 
-  0 != dirx @int 0 = land if
-      dirx !int
-    0 diry !int drop
-  else drop dup 
-  0 != diry @int 0 = land if*
-        diry !int
-      0 dirx !int
-  else drop end
+  0 != ?movingx land if 
+    !snake-dir
+  else over 
+  0 != ?movingy land if*
+    !snake-dir
+  else drop drop end
 end
 
-// Compare current pressed keys with keys pressed in the last checked frame and calls snake-dir
+// Compare current pressed keys with keys pressed in the last checked frame and calls input-dir
 proc check-keys in
   memory gamepad sizeof(int) end
 
-  @gamepad dup dup
+  @GAMEPAD dup dup
   prev-state @8 xor and swap
   prev-state !8
 
   dup 0 != if dup
-    $BUTTON_UP    and 0 != if  2
-    0 else dup
-    $BUTTON_DOWN  and 0 != if* 1
-    0 else 0 over
-    $BUTTON_RIGHT and 0 != if* 1 
+    $BUTTON_LEFT  and 0 != if  2 0 
+    else dup
+    $BUTTON_RIGHT and 0 != if* 1 0 
+    else 0 over
+    $BUTTON_DOWN  and 0 != if*   1 
     else over
-    $BUTTON_LEFT  and 0 != if* 2
-    else 0 end 
-    snake-dir drop
+    $BUTTON_UP    and 0 != if*   2
+    else 0 
+    end input-dir drop
   else drop end
 end
 
 // Update every part of the snake body to its new position
 proc snake-update in
-  memory n sizeof(ptr) end
+  memory snake* sizeof(ptr) end
 
-  snake x+ @int 
-  snake y+ @int
-  snake snake++
-  while dup @snake-end ptr< do n !ptr
-    n @ptr x+ @int
-    n @ptr y+ @int rot
-    n @ptr y+ !int rot
-    n @ptr x+ !int
-    n @ptr snake++
+  snake-head @x 
+  snake-head @y
+  snake-head snake++
+  while dup snake-tail ptr< do snake* !ptr
+    snake* @ptr @x
+    snake* @ptr @y rot
+    snake* @ptr !y rot
+    snake* @ptr !x
+    snake* @ptr snake++
   end drop drop drop
 
-  dirx @int 0 != if
-    snake x+ @int dirx @int
+  ?movingx if
+    snake-head @x snake-dir @x
     clamp-wrap
-    snake x+ !int
-  else diry @int 0 != if*
-    snake y+ @int diry @int
+    snake-head !x
+  else ?movingy if*
+    snake-head @y snake-dir @y
     clamp-wrap
-    snake y+ !int
+    snake-head !y
   end
 end
 
 // Check if the snake head is colliding with the fruit.
 // Incrementing the snake and generating a new fruit if true.
 proc check-fruit in
-  snake x+ @int fruit x+ @int =
-  snake y+ @int fruit y+ @int = land if
-    length ++
+  snake-head @x fruit @x =
+  snake-head @y fruit @y = land if
+    length++
     new-fruit
   end
 end
@@ -135,45 +172,47 @@ proc draw-rect int int in
   memory x sizeof(int) end
   memory y sizeof(int) end
   y !int x !int
-  8 8
-  y @int 8 *
-  x @int 8 *
+  sizeof(cell) dup
+  y @int sizeof(cell) *
+  x @int sizeof(cell) *
   rect
 end
 
 // Draws all parts of the snake
 proc snake-draw in
-  0x0004 $DRAW_COLORS cast(ptr) !16
+  0x0004 !COLORS
 
-  snake x+ @int
-  snake y+ @int
+  snake-head @x
+  snake-head @y
   draw-rect
 
-  0x0043 $DRAW_COLORS cast(ptr) !16
+  0x0043 !COLORS
 
-  @snake-end snake 
+  snake-tail snake-head 
   while snake++ over over ptr> do 
-    dup  cast(ptr) x+ @int
-    over cast(ptr) y+ @int draw-rect
+    dup  cast(ptr) @x
+    over cast(ptr) @y draw-rect
   end drop drop
 end
 
 // Draws the fruit sprite
 proc fruit-draw in
-  0x4320 $DRAW_COLORS cast(ptr) !16
-  1 8 8 
-  fruit y+ @int 8 *
-  fruit x+ @int 8 *
+  0x4320 !COLORS
+  $BLIT_2BPP 
+  fruit-height
+  fruit-width
+  fruit @y sizeof(cell) *
+  fruit @x sizeof(cell) *
   fruit-sprite
   blit
 end
 
 // Gameloop
 proc update in
-  frame-count ++
+  frame-count++
 
-  // Only do checks and updates every 5 frames
-  frame-count @int 5 % 0 = if
+  // Only do checks and updates every `delta_time` frames
+  frame-count @int delta_time % 0 = if
     check-keys
     check-fruit
     snake-update

@@ -153,17 +153,7 @@ proc bputwatstr
   ptr
 in
   let bfd in
-    "\""       bfd bputs
-    while over 0 > do 
-      dup @8
-      char-to-hex
-      "\\"     bfd bputs
-      while over 0 > do
-        dup @8 bfd bputhexchar
-        inc-Str
-      end drop drop
-      inc-Str
-    end "\""   bfd bputs
+    "\""   bfd bputs bfd bputs
+    "\""   bfd bputs
   end
-  drop drop
 end
