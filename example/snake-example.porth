@@ -57,23 +57,26 @@ const fruit-width  8 end
 // Helper inline procs
 inline proc rnd-coord -- int int in 20 rnd 20 rnd end
 inline proc new-fruit in rnd-coord fruit !x fruit !y end
-inline proc ptr> ptr ptr -- bool in swap cast(int) swap cast(int) > end
+inline proc ptr> ptr ptr -- bool in swap ptr< end
 
 // Wasm4 memory getters and setters
 inline proc !PALETTE int int in 4 % 4 * $PALETTE0 cast(ptr) +ptr !int end
 inline proc !COLORS int in $DRAW_COLORS cast(ptr) !16 end
 inline proc @GAMEPAD -- int in $GAMEPAD1 cast(ptr) @8 end
 
-// Return the wrapped snake coord around the screen given its position and direction
-inline proc clamp-wrap int int -- int in
-  1 = if 1 + dup
-    sizeof(grid)  = if 
-      drop 0 
-    end
-  else dup 
-    0 = if
-      drop sizeof(grid) 
-    end 1 - 
+// Return the wrapped snake position around the screen given its position and direction
+proc clamp-wrap int int -- int in
+  memory up sizeof(bool) end
+  1 = up !bool
+  memory val sizeof(int) end
+  val !int
+
+  sizeof(grid) 1 - 0       //screen limits
+  up @bool if swap end     //check based on direction
+  val @int = lnot if drop  //if not at the limits, just increment/decrement
+    val @int 1 
+    up  @bool 
+    if + else - end 
   end
 end
 
@@ -124,11 +127,11 @@ proc check-keys in
     $BUTTON_LEFT  and 0 != if  2 0 
     else dup
     $BUTTON_RIGHT and 0 != if* 1 0 
-    else 0 over
-    $BUTTON_DOWN  and 0 != if*   1 
-    else over
-    $BUTTON_UP    and 0 != if*   2
-    else 0 
+    else dup
+    $BUTTON_DOWN  and 0 != if* 0 1 
+    else dup
+    $BUTTON_UP    and 0 != if* 0 2
+    else 0 0
     end input-dir drop
   else drop end
 end
@@ -139,13 +142,13 @@ proc snake-update in
 
   snake-head @x 
   snake-head @y
-  snake-head snake++
-  while dup snake-tail ptr< do snake* !ptr
+  snake-head 
+  while snake++ dup snake-tail ptr< do snake* !ptr
     snake* @ptr @x
     snake* @ptr @y rot
     snake* @ptr !y rot
     snake* @ptr !x
-    snake* @ptr snake++
+    snake* @ptr 
   end drop drop drop
 
   ?movingx if
@@ -192,8 +195,8 @@ proc snake-draw in
 
   snake-tail snake-head 
   while snake++ over over ptr> do 
-    dup  cast(ptr) @x
-    over cast(ptr) @y draw-rect
+    dup  @x
+    over @y draw-rect
   end drop drop
 end
 
