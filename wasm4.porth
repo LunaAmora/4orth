@@ -31,8 +31,8 @@ import proc rect int int int int in end
 
 // Draws text using the built-in system font.
 import proc text int int ptr in end
-import proc textUtf8 int int int int in end
-import proc textUtf16 int int int int in end
+import proc textUtf8 int int int ptr in end
+import proc textUtf16 int int int ptr in end
 
 // ┌───────────────────────────────────────────────────────────────────────────┐
 // │                                                                           │

@@ -490,7 +490,9 @@ in
               " i32 (i32.const " bfd bputs
               char-counter @int  wat-string-section + bfd bputu
               "))\n"             bfd bputs
-              char-counter @int  str @Str drop + char-counter !int
+              char-counter @int  str @Str drop
+              "\\" str @Str str-starts-with if 3 / + 1 end +
+              char-counter !int
             end
           end
           i 1 +
@@ -888,6 +890,8 @@ proc main in
         tmp-end
         "w4"c                  tmp-append-ptr
         "bundle"c              tmp-append-ptr
+        "--title"c             tmp-append-ptr
+        "4orth Game"c          tmp-append-ptr
         "--linux"c             tmp-append-ptr
         fpb-end
           base-file-path @Str fpb-append drop
