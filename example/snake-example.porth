@@ -21,8 +21,7 @@ inline proc !y int ptr in y+ !int end
 inline proc @x ptr -- int in @int end
 inline proc @y ptr -- int in y+ @int end
 
-inline proc snake+  ptr int -- ptr in sizeof(coord) * ptr+ end
-inline proc snake++ ptr     -- ptr in 1 snake+ end
+inline proc snake++ ptr -- ptr in 1 sizeof(coord) * ptr+ end
 
 // Snake values
 const snake.length sizeof(int)   offset end
@@ -56,7 +55,6 @@ const fruit-width  8 end
 
 // Helper inline procs
 inline proc rnd-coord -- int int in 20 rnd 20 rnd end
-inline proc new-fruit in rnd-coord fruit !x fruit !y end
 inline proc ptr> ptr ptr -- bool in swap ptr< end
 
 // Wasm4 memory getters and setters
@@ -64,33 +62,15 @@ inline proc !PALETTE int int in 4 % 4 * $PALETTE0 cast(ptr) +ptr !int end
 inline proc !COLORS int in $DRAW_COLORS cast(ptr) !16 end
 inline proc @GAMEPAD -- int in $GAMEPAD1 cast(ptr) @8 end
 
-// Return the wrapped snake position around the screen given its position and direction
-proc clamp-wrap int int -- int in
-  memory up sizeof(bool) end
-  1 = up !bool
-  memory val sizeof(int) end
-  val !int
-
-  sizeof(grid) 1 - 0       //screen limits
-  up @bool if swap end     //check based on direction
-  val @int = lnot if drop  //if not at the limits, just increment/decrement
-    val @int 1 
-    up  @bool 
-    if + else - end 
-  end
+// Initialize fruit in a random position
+inline proc new-fruit in 
+  rnd-coord
+  fruit !x
+  fruit !y 
 end
 
-proc main in
-  // Color palette setting
-  0x151640 0 !PALETTE
-  0x3f6d9e 1 !PALETTE
-  0xf783b0 2 !PALETTE
-  0xe6f2ef 3 !PALETTE
-
-  // Initialize fruit in a random position
-  new-fruit
-
-  // Initialize snake body and direction
+// Initialize snake body and direction
+inline proc snake-init in
   1 0 !snake-dir
   3 !snake-length
 
@@ -101,6 +81,21 @@ proc main in
     swap 1 -
     swap snake++
   end drop drop
+end
+
+proc init in
+  snake-init
+  new-fruit
+end
+
+proc main in
+  // Color palette setting
+  0x151640 0 !PALETTE
+  0x3f6d9e 1 !PALETTE
+  0xf783b0 2 !PALETTE
+  0xe6f2ef 3 !PALETTE
+
+  init
 end
 
 // Change snake direction based on input xdir and ydir.
@@ -117,8 +112,6 @@ end
 
 // Compare current pressed keys with keys pressed in the last checked frame and calls input-dir
 proc check-keys in
-  memory gamepad sizeof(int) end
-
   @GAMEPAD dup dup
   prev-state @8 xor and swap
   prev-state !8
@@ -134,6 +127,22 @@ proc check-keys in
     else 0 0
     end input-dir drop
   else drop end
+end
+
+// Return the wrapped snake position around the screen given its position and direction
+proc clamp-wrap int int -- int in
+  memory up sizeof(bool) end
+  1 = up !bool
+  memory val sizeof(int) end
+  val !int
+
+  sizeof(grid) 1 - 0       //screen limits
+  up @bool if swap end     //check based on direction
+  val @int = lnot if drop  //if not at the limits, just increment/decrement
+    val @int 1 
+    up  @bool 
+    if + else - end 
+  end
 end
 
 // Update every part of the snake body to its new position
@@ -170,6 +179,20 @@ proc check-fruit in
     length++
     new-fruit
   end
+end
+
+proc check-death -- bool in
+  memory dead sizeof(bool) end
+
+  snake-tail snake-head snake++
+  while over over ptr> dead @bool lnot land do
+    dup  @x snake-head @x =
+    over @y snake-head @y = land dead !bool
+    snake++
+  end 
+  drop drop
+
+  dead @bool
 end
 
 // Draw a 8 x 8 rectangle in a given coord
@@ -221,6 +244,10 @@ proc update in
     check-keys
     check-fruit
     snake-update
+
+    check-death if
+      init
+    end
   end
 
   fruit-draw
