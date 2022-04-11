@@ -53,6 +53,7 @@ inline proc @MOUSE.X -- int in $MOUSE_X cast(ptr) @16 end
 inline proc @MOUSE.Y -- int in $MOUSE_Y cast(ptr) @16 end
 
 proc main in
+  $SYSTEM_HIDE_GAMEPAD_OVERLAY $SYSTEM_FLAGS cast(ptr) !8
   0x000000 0 !PALETTE
   0xf04b60 1 !PALETTE
   0xaa1230 2 !PALETTE
