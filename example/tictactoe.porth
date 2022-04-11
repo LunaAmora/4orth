@@ -1,0 +1,212 @@
+include "wasm4.porth"
+
+memory mouse-state sizeof(u8)  end
+
+const WINDOW_SIZE 160 end
+const FONT_CENTER 4 end
+const chars " OX"c end
+
+const CELL_SIZE  16 end
+const CELL_BORDER 1 end
+const CELL_BOUNDS CELL_SIZE CELL_BORDER - end
+const CELL_FONT_CENTER CELL_BOUNDS 2 divmod drop 1 + FONT_CENTER - end
+
+const BOARD_BORDER 2 end
+
+const BOARD_COLL 3 end
+const BOARD_ROWS 3 end
+
+const BOARD_WIDTH  CELL_SIZE BOARD_COLL * end
+const BOARD_HEIGHT CELL_SIZE BOARD_ROWS * end
+
+const COLL BOARD_COLL BOARD_COLL * end
+const ROWS BOARD_ROWS BOARD_ROWS * end
+
+const COLL_SIZE COLL CELL_SIZE * end
+const ROWS_SIZE ROWS CELL_SIZE * end
+
+const COLL_GRID_SIZE BOARD_COLL 1 - BOARD_BORDER * COLL_SIZE + end
+const ROWS_GRID_SIZE BOARD_ROWS 1 - BOARD_BORDER * ROWS_SIZE + end
+
+const GRID_OFFSET.X WINDOW_SIZE COLL_GRID_SIZE - 2 divmod drop end
+const GRID_OFFSET.Y WINDOW_SIZE ROWS_GRID_SIZE - 2 divmod drop end
+const GRID_BOUNDS.X GRID_OFFSET.X COLL_SIZE + end
+const GRID_BOUNDS.Y GRID_OFFSET.Y ROWS_SIZE + end
+
+const sizeof(cell) sizeof(int) end
+const sizeof(grid) ROWS COLL * sizeof(cell) *  end
+
+memory grid          sizeof(grid) end
+memory highlighted   sizeof(ptr)  end
+memory current-board sizeof(int)  end
+memory player        sizeof(bool) end
+
+inline proc cast(cell) int int -- ptr in COLL * + sizeof(cell) * grid +ptr end
+inline proc !cell    int int int in cast(cell) !int end
+inline proc @cell int int -- int in cast(cell) @int end
+
+inline proc !COLORS int in $DRAW_COLORS cast(ptr) !16 end
+inline proc !PALETTE int int in 4 % 4 * $PALETTE0 cast(ptr) +ptr !int end
+
+inline proc @MOUSE   -- int in $MOUSE_BUTTONS cast(ptr) @8 end
+inline proc @MOUSE.X -- int in $MOUSE_X cast(ptr) @16 end
+inline proc @MOUSE.Y -- int in $MOUSE_Y cast(ptr) @16 end
+
+proc main in
+  0x000000 0 !PALETTE
+  0xf04b60 1 !PALETTE
+  0xaa1230 2 !PALETTE
+  0x540500 3 !PALETTE
+end
+
+proc cell-pos-i int int -- int in
+  over swap /
+  BOARD_BORDER * swap
+  CELL_SIZE    * +
+  CELL_BORDER  +
+end
+
+proc cell-pos
+  int int -- int int
+in
+  BOARD_ROWS cell-pos-i swap
+  BOARD_COLL cell-pos-i swap
+end
+
+proc draw-cell int int in
+  memory value sizeof(int) end
+  over over @cell value !int
+
+  memory highlight sizeof(bool) end
+  over over cast(cell) 
+  highlighted @ptr ptr=
+  value       @int 0 = 
+  land highlight !bool
+
+  memory x sizeof(int) end
+  memory y sizeof(int) end 
+  cell-pos
+  GRID_OFFSET.Y + y !int 
+  GRID_OFFSET.X + x !int
+  
+  highlight @bool if
+    0x0042
+  else
+    0x0043
+  end !COLORS
+
+  CELL_BOUNDS dup
+  y @int 
+  x @int 
+  rect
+
+  value @int 0 != if 0001 !COLORS
+    y @int CELL_FONT_CENTER +
+    x @int CELL_FONT_CENTER +
+    1
+    chars value @int ptr+
+    textUtf8
+  end
+end
+
+proc update-current-board in
+  highlighted @ptr cast(int) grid cast(int) - 
+  sizeof(cell) /
+  COLL BOARD_ROWS * % dup 
+    COLL / BOARD_COLL * swap
+    BOARD_COLL % + 
+  1 + current-board !int
+end
+
+proc check-mouse in
+  @MOUSE dup dup
+  mouse-state @8 xor and swap
+  mouse-state !8
+
+  dup 0 != 
+  highlighted @ptr ?null lnot land
+  highlighted @ptr @int  0 =  land if
+    $MOUSE_LEFT  and cast(bool) if
+      player @bool dup lnot 
+      player !bool 
+      cast(int) 1 +
+      highlighted @ptr !int 
+      update-current-board
+    end
+  else drop end
+end
+
+inline proc board-pos
+  int int -- int int
+in
+  BOARD_ROWS *
+  swap 
+  BOARD_COLL *
+  swap
+  cell-pos
+  BOARD_BORDER 2 / - swap
+  BOARD_BORDER 2 / - swap
+end
+
+proc check-board in
+  current-board @int 0 != if
+    0x0002 !COLORS
+    BOARD_HEIGHT BOARD_BORDER + CELL_BORDER -
+    BOARD_WIDTH  BOARD_BORDER + CELL_BORDER -
+    current-board @int 1 - BOARD_COLL divmod swap
+    board-pos
+    GRID_OFFSET.Y + 
+    swap
+    GRID_OFFSET.X +
+    rect
+  end
+end
+
+proc highlight-calc-y
+  int int -- int bool
+in 
+  BOARD_HEIGHT BOARD_BORDER + divmod
+  dup BOARD_HEIGHT >= if 
+    drop drop
+    false 
+  else 
+    CELL_SIZE /
+    swap BOARD_ROWS * +
+    dup  rot <
+  end
+end
+
+proc highlight-calc-x 
+  int int -- int bool
+in 
+  BOARD_WIDTH BOARD_BORDER + divmod
+  dup BOARD_WIDTH >= if 
+    drop drop
+    false 
+  else 
+    CELL_SIZE /
+    swap BOARD_COLL * +
+    dup  rot <
+  end
+end
+
+proc update in
+  COLL @MOUSE.X GRID_OFFSET.X - highlight-calc-x
+  ROWS @MOUSE.Y GRID_OFFSET.Y - highlight-calc-y rot land if
+    cast(cell)
+    highlighted !ptr
+  else drop drop
+    NULL highlighted !ptr
+  end
+
+  check-mouse
+  check-board
+
+  0 while dup COLL < do
+    0 while dup ROWS < do
+      over over draw-cell
+        1 +
+    end drop
+    1 +
+  end drop
+end

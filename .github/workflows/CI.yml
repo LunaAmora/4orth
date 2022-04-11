@@ -54,7 +54,7 @@ jobs:
         run: ./porth/porth -I ./porth/std com 4orth.porth
         
       - name: Test Compilation
-        run: ./4orth -I ./porth/std com -b -opt -wat ./example/snake-example.porth
+        run: ./4orth -I ./porth/std com -b -opt -wat ./example/tictactoe.porth
       
       - name: Persist build 
         uses: actions/upload-artifact@v3
@@ -66,7 +66,7 @@ jobs:
             wasm4.porth
       
       - name: Test html Bundle 
-        run:  ./w4 bundle ./example/snake-example.wasm --title "Snake Game" --html index.html
+        run:  ./w4 bundle ./example/tictactoe.wasm --title "Ultimate Tic Tac Toe" --html index.html
       
       - name: Persit Html
         uses: actions/upload-artifact@v3
