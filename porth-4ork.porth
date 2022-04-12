@@ -406,8 +406,8 @@ in
        lexer @ptr Lexer.line ptr+ ?str-empty lnot if
          lexer @ptr Lexer.line ptr+ @Str.data @8 'c' = if
            lexer @ptr Lexer.line ptr+ str-chop-one-left
-           0 strbuf-append-char
-           token @ptr Token.value ptr+ offsetof(Str.count) ptr+ inc64
+           "\\00"  strbuf-append-str 
+           token @ptr Token.value ptr+ offsetof(Str.count) ptr+ 3 inc64-by
            TOKEN_CSTR token @ptr Token.type ptr+ !64
          else
            TOKEN_STR token @ptr Token.type ptr+ !64

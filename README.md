@@ -1,4 +1,6 @@
-# 4orth is a Porth to Wasm compiler with Wasm-4 bindings
+# 4orth 
+4orth is a [Porth](https://gitlab.com/tsoding/porth) compiler with a [WASM-4](https://wasm4.org/) target.
+
 ## Quick Start
 
 You can download the latest [release](https://github.com/FrankWPA/4orth/releases) or [bootstrap](https://github.com/FrankWPA/4orth#bootstrapping) it yourself.
@@ -37,28 +39,41 @@ Or you can use the subcommands `-b` and `-r` to bundle and run after the compila
 $ ./4orth com -b -r game.porth
 ```
 
-Use `-opt` to benefit from [binaryen](https://github.com/WebAssembly/binaryen) optimization. Use `4orth help` to view all other available subcommands.
+### Running options and subcommands
+
+```console
+$ ./4orth [OPTIONS] <SUBCOMMAND>
+
+OPTIONS:
+    -unsafe              Disable type checking.
+    -I <path>            Add <path> to the include paths list.
+SUBCOMMANDS:
+    com [OPTIONS] <file> Compile the program
+        -r               Run the program after successful compilation
+        -b               Bundles the program to a linux executable. (If with -r, executes the bundle)
+        -opt             Optimize the program with wasm-opt
+        -wat             Transforms the stripped program back from the final `.wasm` to `.wat` 
+        -s               Silent mode. Don't print any info about compilation phases
+    png2src <file>       Uses w4 to convert a png file to Porth code and prints it
+        -s               Silent mode. Only print the converted code
+    help                 Print this help to stdout and exit with 0 code
+```
 
 ### Status
 
 4orth is not feature complete with the current open version of Porth and Wasm-4 yet. The current set of features not supported consists of:
 
-- Int64
-- Floats
+- Let-bindings (let and peek keywords)
+- Int64 (all integers are treated as Int32, if an overflow occurs on const evaluation, the .wat file will contain an error)
 - Negative numbers
-
-Porth operations:
-- OP_BIND_LET
-- OP_BIND_PEEK
-- OP_PUSH_BIND
-- OP_UNBIND
+- Floats
 
 ### Changes
 
-4orth implements some features not available in Porth to facilitate Wasm and Wasm-4 integration:
+4orth implements some features not available in Porth to facilitate Wasm-4 integration:
 
 - Xor Intrinsic
-- Hexadecimal numbers
+- Hexadecimal numbers (as `0x` format on numbers, and as `\\` plus 2 digits on strings)
 - Bit shift support in const evaluation
 - Null terminated string support in const evaluation
 - Baked in random number generator (will be removed once there is float and int64 support).

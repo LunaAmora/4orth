@@ -440,6 +440,31 @@ in
   else drop drop end
 end
 
+proc inc-by-char-count ptr ptr in
+  memory str sizeof(Str) end
+  @Str str !Str
+  memory count sizeof(ptr) end
+  count !ptr
+  
+  while
+    while 
+      str @Str.count 0 >  "\\" 
+      str @Str str-starts-with 
+      lnot land 
+    do
+      count @ptr inc64
+      str str-chop-one-left
+    end
+    str @Str.count 3 >= "\\"
+    str @Str str-starts-with 
+    land
+  do
+    str 3 
+    str-chop-left-by
+    count @ptr inc64
+  end
+end
+
 proc generate-wat
   ptr // file-path
 in
@@ -490,9 +515,8 @@ in
               " i32 (i32.const " bfd bputs
               char-counter @int  wat-string-section + bfd bputu
               "))\n"             bfd bputs
-              char-counter @int  str @Str drop
-              "\\" str @Str str-starts-with if 3 / + 1 end +
-              char-counter !int
+              char-counter  str
+              inc-by-char-count
             end
           end
           i 1 +
@@ -707,11 +731,11 @@ in
     "        -r                Run the program after successful compilation\n"                 fd fputs
     "        -b                Bundles the program to a linux executable. (If with -r, executes the bundle)\n" fd fputs
     "        -opt              Optimize the program with wasm-opt\n"                           fd fputs
-    "        -wat              Transforms the labels stripped program back from `.wasm` to `.wat` \n"     fd fputs
+    "        -wat              Transforms the stripped program back from the final `.wasm` to `.wat` \n"     fd fputs
     "        -s                Silent mode. Don't print any info about compilation phases\n"   fd fputs
-    "    dump <file>           Dump the ops of the program\n"                                  fd fputs
-    "    lex <file>            Produce lexical analysis of the file\n"                         fd fputs
-    "    summary <file>        Print the summary of the program\n"                             fd fputs
+    // "    dump <file>           Dump the ops of the program\n"                                  fd fputs
+    // "    lex <file>            Produce lexical analysis of the file\n"                         fd fputs
+    // "    summary <file>        Print the summary of the program\n"                             fd fputs
     "    png2src <file>        Uses w4 to convert a png file to Porth code and prints it\n"    fd fputs
     "        -s                Silent mode. Only print the converted code\n"                   fd fputs
     "    help                  Print this help to stdout and exit with 0 code\n"               fd fputs

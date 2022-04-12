@@ -2,6 +2,13 @@ include "std.porth"
 
 inline proc inc-Str int ptr -- int ptr in 1 ptr+ swap 1 - swap end
 
+inline proc dec64-by ptr int in over @64 swap - swap !64 end
+
+inline proc str-chop-left-by ptr int in
+   over Str.count over dec64-by
+   swap Str.data  swap inc64-by
+end
+
 proc @hex int -- int ptr in
   memory hex-char sizeof(ptr) end
   tmp-end hex-char !ptr
