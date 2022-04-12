@@ -6,12 +6,12 @@ const WINDOW_SIZE 160 end
 const FONT_CENTER 4 end
 const chars " OX"c end
 
-const CELL_SIZE  16 end
-const CELL_BORDER 1 end
+const CELL_SIZE  15 end
+const CELL_BORDER 2 end
 const CELL_BOUNDS CELL_SIZE CELL_BORDER - end
 const CELL_FONT_CENTER CELL_BOUNDS 2 divmod drop 1 + FONT_CENTER - end
 
-const BOARD_BORDER 2 end
+const BOARD_BORDER 4 end
 
 const BOARD_COLL 3 end
 const BOARD_ROWS 3 end
@@ -30,8 +30,6 @@ const ROWS_GRID_SIZE BOARD_ROWS 1 - BOARD_BORDER * ROWS_SIZE + end
 
 const GRID_OFFSET.X WINDOW_SIZE COLL_GRID_SIZE - 2 divmod drop end
 const GRID_OFFSET.Y WINDOW_SIZE ROWS_GRID_SIZE - 2 divmod drop end
-const GRID_BOUNDS.X GRID_OFFSET.X COLL_SIZE + end
-const GRID_BOUNDS.Y GRID_OFFSET.Y ROWS_SIZE + end
 
 const sizeof(cell) sizeof(int) end
 const sizeof(grid) ROWS COLL * sizeof(cell) *  end
@@ -53,25 +51,27 @@ inline proc @MOUSE.X -- int in $MOUSE_X cast(ptr) @16 end
 inline proc @MOUSE.Y -- int in $MOUSE_Y cast(ptr) @16 end
 
 proc main in
-  $SYSTEM_HIDE_GAMEPAD_OVERLAY $SYSTEM_FLAGS cast(ptr) !8
-  0x000000 0 !PALETTE
-  0xf04b60 1 !PALETTE
-  0xaa1230 2 !PALETTE
-  0x540500 3 !PALETTE
+  0x28000e 0 !PALETTE
+  0x641010 1 !PALETTE
+  0x734940 2 !PALETTE
+  0xbba075 3 !PALETTE
+
+  $SYSTEM_HIDE_GAMEPAD_OVERLAY
+  $SYSTEM_FLAGS cast(ptr) !8
 end
 
-proc cell-pos-i int int -- int in
+proc cell-pos-by-index int int -- int in
   over swap /
   BOARD_BORDER * swap
   CELL_SIZE    * +
-  CELL_BORDER  +
+  CELL_BORDER  2 / +
 end
 
 proc cell-pos
   int int -- int int
 in
-  BOARD_ROWS cell-pos-i swap
-  BOARD_COLL cell-pos-i swap
+  BOARD_ROWS cell-pos-by-index swap
+  BOARD_COLL cell-pos-by-index swap
 end
 
 proc draw-cell int int in
@@ -91,9 +91,9 @@ proc draw-cell int int in
   GRID_OFFSET.X + x !int
   
   highlight @bool if
-    0x0042
+    0x0024
   else
-    0x0043
+    0x0023
   end !COLORS
 
   CELL_BOUNDS dup
@@ -137,7 +137,7 @@ proc check-mouse in
   else drop end
 end
 
-inline proc board-pos
+proc board-pos
   int int -- int int
 in
   BOARD_ROWS *
@@ -151,7 +151,7 @@ end
 
 proc check-board in
   current-board @int 0 != if
-    0x0002 !COLORS
+    0x0004 !COLORS
     BOARD_HEIGHT BOARD_BORDER + CELL_BORDER -
     BOARD_WIDTH  BOARD_BORDER + CELL_BORDER -
     current-board @int 1 - BOARD_COLL divmod swap
@@ -163,37 +163,43 @@ proc check-board in
   end
 end
 
-proc highlight-calc-y
-  int int -- int bool
-in 
-  BOARD_HEIGHT BOARD_BORDER + divmod
-  dup BOARD_HEIGHT >= if 
+proc search_grid 
+  int // coord
+  int // axis cell number
+  int // grid size
+  int // board cell number
+  -- 
+  int // index
+  bool
+in
+  memory dir_number sizeof(int) end
+  dir_number !int
+  memory dir_size sizeof(int) end
+  dir_size !int
+
+  swap dir_size @int BOARD_BORDER + divmod
+  dup  dir_size @int >= if 
     drop drop
     false 
   else 
-    CELL_SIZE /
-    swap BOARD_ROWS * +
-    dup  rot <
+    CELL_SIZE / 
+    swap
+    dir_number @int * +
+    dup rot <
   end
 end
 
-proc highlight-calc-x 
-  int int -- int bool
-in 
-  BOARD_WIDTH BOARD_BORDER + divmod
-  dup BOARD_WIDTH >= if 
-    drop drop
-    false 
-  else 
-    CELL_SIZE /
-    swap BOARD_COLL * +
-    dup  rot <
-  end
+proc highlight-calc
+  int int -- int int bool
+in
+  ROWS BOARD_HEIGHT BOARD_ROWS search_grid rot
+  COLL BOARD_WIDTH  BOARD_COLL search_grid rot land
+  if swap true else false end
 end
 
 proc update in
-  COLL @MOUSE.X GRID_OFFSET.X - highlight-calc-x
-  ROWS @MOUSE.Y GRID_OFFSET.Y - highlight-calc-y rot land if
+  @MOUSE.X GRID_OFFSET.X -
+  @MOUSE.Y GRID_OFFSET.Y - highlight-calc if
     cast(cell)
     highlighted !ptr
   else drop drop
