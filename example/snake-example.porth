@@ -58,9 +58,9 @@ inline proc rnd-coord -- int int in 20 rnd 20 rnd end
 inline proc ptr> ptr ptr -- bool in swap ptr< end
 
 // Wasm4 memory getters and setters
-inline proc !PALETTE int int in 4 % 4 * $PALETTE0 cast(ptr) +ptr !int end
-inline proc !COLORS int in $DRAW_COLORS cast(ptr) !16 end
-inline proc @GAMEPAD -- int in $GAMEPAD1 cast(ptr) @8 end
+inline proc !PALETTE int int in 4 % 4 * $PALETTE0 +ptr !int end
+inline proc !COLORS int in $DRAW_COLORS !16 end
+inline proc @GAMEPAD -- int in $GAMEPAD1 @8 end
 
 // Initialize fruit in a random position
 inline proc new-fruit in 

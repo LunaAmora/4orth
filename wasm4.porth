@@ -64,25 +64,25 @@ import proc traceUtf16 int ptr in end
 // │                                                                           │
 // └───────────────────────────────────────────────────────────────────────────┘
 
-const $MEM_BEGIN     4     offset end // unused 4 bytes
-const $PALETTE0      4     offset end
-const $PALETTE1      4     offset end
-const $PALETTE2      4     offset end
-const $PALETTE3      4     offset end
-const $DRAW_COLORS   2     offset end
-const $GAMEPAD1      1     offset end
-const $GAMEPAD2      1     offset end
-const $GAMEPAD3      1     offset end
-const $GAMEPAD4      1     offset end
-const $MOUSE_X       2     offset end
-const $MOUSE_Y       2     offset end
-const $MOUSE_BUTTONS 1     offset end
-const $SYSTEM_FLAGS  1     offset end
-const $RESERVED      128   offset end // Reserved bytes for future use
-const $FRAMEBUFFER   6400  offset end
-const $PORTH_MEM     54879 offset end // Start of Porth global mem
-const $PORTH_STACK   4096  offset end // Reserved memory for Porth stack
-const $PROGRAM_END          reset end // End of program memory
+const $MEM_BEGIN     4     offset cast(ptr) end // unused 4 bytes
+const $PALETTE0      4     offset cast(ptr) end
+const $PALETTE1      4     offset cast(ptr) end
+const $PALETTE2      4     offset cast(ptr) end
+const $PALETTE3      4     offset cast(ptr) end
+const $DRAW_COLORS   2     offset cast(ptr) end
+const $GAMEPAD1      1     offset cast(ptr) end
+const $GAMEPAD2      1     offset cast(ptr) end
+const $GAMEPAD3      1     offset cast(ptr) end
+const $GAMEPAD4      1     offset cast(ptr) end
+const $MOUSE_X       2     offset cast(ptr) end
+const $MOUSE_Y       2     offset cast(ptr) end
+const $MOUSE_BUTTONS 1     offset cast(ptr) end
+const $SYSTEM_FLAGS  1     offset cast(ptr) end
+const $RESERVED      128   offset cast(ptr) end // Reserved bytes for future use
+const $FRAMEBUFFER   6400  offset cast(ptr) end
+const $PORTH_MEM     54879 offset cast(ptr) end // Start of Porth global mem
+const $PORTH_STACK   4096  offset cast(ptr) end // Reserved memory for Porth stack
+const $PROGRAM_END          reset cast(ptr) end // End of program memory
 
 const $SYSTEM_PRESERVE_FRAMEBUFFER 1 end
 const $SYSTEM_HIDE_GAMEPAD_OVERLAY 2 end

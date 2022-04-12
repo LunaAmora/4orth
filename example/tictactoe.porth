@@ -43,12 +43,12 @@ inline proc cast(cell) int int -- ptr in COLL * + sizeof(cell) * grid +ptr end
 inline proc !cell    int int int in cast(cell) !int end
 inline proc @cell int int -- int in cast(cell) @int end
 
-inline proc !COLORS int in $DRAW_COLORS cast(ptr) !16 end
-inline proc !PALETTE int int in 4 % 4 * $PALETTE0 cast(ptr) +ptr !int end
+inline proc !COLORS int in $DRAW_COLORS !16 end
+inline proc !PALETTE int int in 4 % 4 * $PALETTE0 +ptr !int end
 
-inline proc @MOUSE   -- int in $MOUSE_BUTTONS cast(ptr) @8 end
-inline proc @MOUSE.X -- int in $MOUSE_X cast(ptr) @16 end
-inline proc @MOUSE.Y -- int in $MOUSE_Y cast(ptr) @16 end
+inline proc @MOUSE   -- int in $MOUSE_BUTTONS @8 end
+inline proc @MOUSE.X -- int in $MOUSE_X @16 end
+inline proc @MOUSE.Y -- int in $MOUSE_Y @16 end
 
 proc main in
   0x28000e 0 !PALETTE
@@ -57,7 +57,7 @@ proc main in
   0xbba075 3 !PALETTE
 
   $SYSTEM_HIDE_GAMEPAD_OVERLAY
-  $SYSTEM_FLAGS cast(ptr) !8
+  $SYSTEM_FLAGS !8
 end
 
 proc cell-pos-by-index int int -- int in
@@ -127,7 +127,7 @@ proc check-mouse in
   dup 0 != 
   highlighted @ptr ?null lnot land
   highlighted @ptr @int  0 =  land if
-    $MOUSE_LEFT  and cast(bool) if
+    $MOUSE_LEFT and cast(bool) if
       player @bool dup lnot 
       player !bool 
       cast(int) 1 +

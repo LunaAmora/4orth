@@ -11,7 +11,7 @@ memory coord sizeof(int) 2 * end
 inline proc get-coord -- int int in coord @int coord 32 ptr+ @int end
 inline proc set-coord    int int in coord !int coord 32 ptr+ !int end
 
-inline proc @gamepad  -- int in $GAMEPAD1 cast(ptr) @8 end
+inline proc @gamepad  -- int in $GAMEPAD1 @8 end
 inline proc ++ ptr in inc64 end
 
 proc rnd-coord in
@@ -21,7 +21,7 @@ proc rnd-coord in
 end
 
 proc main in
-  0x000000 $PALETTE0 cast(ptr) !int
+  0x000000 $PALETTE0 !int
   str1 string !ptr
   rnd-coord
 end
@@ -35,7 +35,7 @@ proc check-keys in
 
   0 != if 
     2 rnd 1 = if str1 else str2 end string !ptr
-    0xffffff rnd $PALETTE2 cast(ptr) !int
+    0xffffff rnd $PALETTE2 !int
     rnd-coord
   end
 end
