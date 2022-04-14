@@ -1,17 +1,15 @@
 include "wasm4.porth"
 
-memory gamepad-state sizeof(u8) end
-memory mouse-state sizeof(u8)   end
+memory gamepad-state sizeof(u8)   end
+memory mouse-state   sizeof(u8)   end
+memory frame-count   sizeof(int)  end
+memory input-mode    sizeof(bool) end
 
-memory frame-count sizeof(int) end
-memory input-mode sizeof(bool) end
-
-inline proc frame-count++ in frame-count @int 1 + frame-count !int end
-const delta_time 5 end 
+const delta_time 4 end
 
 const WINDOW_SIZE 160 end
 const FONT_CENTER 4 end
-const chars " XO"c end
+const CHARS " XO"c end
 
 const CELL_SIZE  14 end
 const CELL_BORDER 1 end
@@ -38,12 +36,8 @@ const ROWS_GRID_SIZE BOARD_ROWS 1 - BOARD_BORDER * ROWS_SIZE + end
 const GRID_OFFSET.X WINDOW_SIZE COLL_GRID_SIZE - 2 divmod drop end
 const GRID_OFFSET.Y WINDOW_SIZE ROWS_GRID_SIZE - 2 divmod drop end
 
-const coord.x sizeof(int) offset end
-const coord.y sizeof(int) offset end
-const sizeof(coord) reset end
-
-const cell.value sizeof(int)   offset end
-const cell.coord sizeof(coord) offset end
+const cell.value sizeof(int)     offset end
+const cell.coord sizeof(int) 2 * offset end
 const sizeof(cell) reset end
 
 const sizeof(grid) ROWS COLL * sizeof(cell) *  end
@@ -55,13 +49,10 @@ memory player        sizeof(bool) end
 memory gamepad       sizeof(ptr)  end
 
 inline proc @grid.index ptr -- int in cast(int) grid cast(int) - sizeof(cell) / end
-inline proc @coord ptr -- int int in @grid.index COLL divmod swap end
-inline proc @x ptr -- int in @coord drop end
-inline proc @y ptr -- int in @coord swap drop end
+inline proc @index.coord int -- int int in COLL divmod swap end
+inline proc @coord ptr -- int int in @grid.index @index.coord end
 
 inline proc cast(cell) int int -- ptr in COLL * + sizeof(cell) * grid +ptr end
-inline proc !cell.value int int    int in cast(cell) !int end
-inline proc @cell.value int int -- int in cast(cell) @int end
 
 inline proc @GAMEPAD -- int in gamepad @ptr @8 end
 inline proc !COLORS int in $DRAW_COLORS !16 end
@@ -71,22 +62,30 @@ inline proc @MOUSE   -- int in $MOUSE_BUTTONS @8 end
 inline proc @MOUSE.X -- int in $MOUSE_X @16 end
 inline proc @MOUSE.Y -- int in $MOUSE_Y @16 end
 
-inline proc player-toggle in
-  player dup toggle @bool if
-    $GAMEPAD1
-  else
-    $GAMEPAD2
-  end
-  gamepad !ptr
+inline proc frame-count++ in frame-count @int 1 + frame-count !int end
+
+inline proc reset-control-state in
+  0 gamepad-state !8
+  0 mouse-state   !8
 end
 
-inline proc input-mode-toggle in
-  input-mode dup toggle @bool if
-    0
-  else 
+proc input-mode-toggle in
+  input-mode dup @bool if
     $SYSTEM_HIDE_GAMEPAD_OVERLAY
-  end
+  else 0 end
   $SYSTEM_FLAGS !8
+  toggle
+end
+
+proc player-toggle in
+  player dup @bool if
+    $GAMEPAD2
+  else
+    $GAMEPAD1
+  end
+  gamepad !ptr
+  toggle
+  reset-control-state
 end
 
 proc main in
@@ -101,65 +100,15 @@ proc main in
   player-toggle
 end
 
-proc cell-pos-by-index int int -- int in
-  over swap /
-  BOARD_BORDER * swap
-  CELL_SIZE    * +
-  CELL_BORDER  2 / +
-end
-
-proc cell-pos
-  int int -- int int
-in
-  BOARD_ROWS cell-pos-by-index swap
-  BOARD_COLL cell-pos-by-index swap
-end
-
-proc draw-cell int int in
-  memory value sizeof(int) end
-  over over @cell.value value !int
-
-  memory highlight sizeof(bool) end
-  over over cast(cell) 
-  highlighted @ptr ptr=
-  highlight   !bool
-
-  memory x sizeof(int) end
-  memory y sizeof(int) end 
-  cell-pos
-  GRID_OFFSET.Y + y !int 
-  GRID_OFFSET.X + x !int
-  
-  highlight @bool if
-    0x0024
-  else
-    0x0023
-  end !COLORS
-
-  CELL_BOUNDS dup
-  y @int 
-  x @int 
-  rect
-
-  value @int 0 != if 0001 !COLORS
-    y @int CELL_FONT_CENTER +
-    x @int CELL_FONT_CENTER +
-    1
-    chars value @int ptr+
-    textUtf8
-  end
-end
-
 proc update-current-board in
   highlighted @ptr @grid.index
   COLL BOARD_ROWS * % dup 
     BOARD_COLL %
     swap  COLL / 
     BOARD_COLL * +
-    1 +
-  dup current-board !int
-
-  1 - 
+  dup
+  1 + current-board !int
+  
   BOARD_COLL divmod
   BOARD_COLL * swap 
   BOARD_COLL BOARD_ROWS BOARD_COLL * * * +
@@ -168,26 +117,12 @@ proc update-current-board in
 end
 
 proc place-and-update in
-  player @bool cast(int) 1 +
-  highlighted @ptr !int
-  update-current-board
-  player-toggle
-end
-
-proc check-mouse in
-  @MOUSE dup dup
-  mouse-state @8 xor and swap
-  mouse-state !8
-
-  dup 0 != swap $MOUSE_LEFT and cast(bool) land if
-    input-mode @bool if      
-      input-mode-toggle
-    else
-      highlighted @ptr ?null lnot
-      highlighted @ptr @int  0 =  land if
-        place-and-update
-      end
-    end
+  highlighted @ptr ?null lnot
+  highlighted @ptr @int  0 =  land if
+    player @bool cast(int) 1 +
+    highlighted @ptr !int
+    update-current-board
+    player-toggle
   end
 end
 
@@ -201,7 +136,7 @@ proc clamp-wrap int int int -- int in
   dir @bool if swap end
   pos @int = lnot if drop
     pos @int 1 
-    dir  @bool 
+    dir @bool 
     if + else - end 
   end
 end
@@ -220,10 +155,16 @@ proc input-dir int int in
   end
 end
 
+proc update-state int ptr -- int in
+  memory prev-state sizeof(ptr) end
+  prev-state !ptr
+  dup dup 
+  prev-state @ptr @8 xor and swap
+  prev-state @ptr !8
+end
+
 proc check-keys in
-  @GAMEPAD dup dup
-  gamepad-state @8 xor and swap
-  gamepad-state !8
+  @GAMEPAD gamepad-state update-state
 
   dup 0 != if
     input-mode @bool lnot if
@@ -245,32 +186,6 @@ proc check-keys in
     end input-dir
     drop
   else drop end
-end
-
-proc board-pos
-  int int -- int int
-in
-  BOARD_ROWS *
-  swap 
-  BOARD_COLL *
-  swap
-  cell-pos
-  BOARD_BORDER 2 / - swap
-  BOARD_BORDER 2 / - swap
-end
-
-proc draw-current-board in
-  current-board @int 0 != if
-    0x0004 !COLORS
-    BOARD_HEIGHT BOARD_BORDER + CELL_BORDER -
-    BOARD_WIDTH  BOARD_BORDER + CELL_BORDER -
-    current-board @int 1 - BOARD_COLL divmod swap
-    board-pos
-    GRID_OFFSET.Y + 
-    swap
-    GRID_OFFSET.X +
-    rect
-  end
 end
 
 proc search_grid 
@@ -307,35 +222,131 @@ in
   if swap true else false end
 end
 
+proc cell-under-pointer -- ptr in
+  @MOUSE.X GRID_OFFSET.X -
+  @MOUSE.Y GRID_OFFSET.Y - highlight-calc if
+    cast(cell)
+  else drop drop
+    NULL
+  end
+end
+
+proc check-mouse in
+  @MOUSE mouse-state update-state
+
+  dup 0 != swap
+  $MOUSE_LEFT and cast(bool) land if
+    input-mode @bool if
+      cell-under-pointer ?null lnot if
+        input-mode-toggle
+      end 
+    else
+      place-and-update
+    end
+  end
+end
+
+proc cell-pos-by-index int int -- int in
+  over swap /
+  BOARD_BORDER * swap
+  CELL_SIZE    * +
+  CELL_BORDER  2 / +
+end
+
+proc cell-pos
+  int int -- int int
+in
+  BOARD_ROWS cell-pos-by-index swap
+  BOARD_COLL cell-pos-by-index swap
+end
+
+proc board-pos
+  int int -- int int
+in
+  BOARD_ROWS *
+  swap 
+  BOARD_COLL *
+  swap
+  cell-pos
+  BOARD_BORDER 2 / - swap
+  BOARD_BORDER 2 / - swap
+end
+
+proc draw-current-board in
+  current-board @int 0 != if
+    0x0004 !COLORS
+    BOARD_HEIGHT BOARD_BORDER + CELL_BORDER -
+    BOARD_WIDTH  BOARD_BORDER + CELL_BORDER -
+    current-board @int 1 - BOARD_COLL divmod swap
+    board-pos
+    GRID_OFFSET.Y + 
+    swap
+    GRID_OFFSET.X +
+    rect
+  end
+end
+
+proc draw-cell ptr in
+  memory cell sizeof(ptr) end
+  cell !ptr
+
+  memory x sizeof(int) end
+  memory y sizeof(int) end 
+  cell @ptr @coord cell-pos
+  GRID_OFFSET.Y + y !int 
+  GRID_OFFSET.X + x !int
+
+  cell @ptr highlighted @ptr ptr= if
+    0x0024
+  else
+    0x0023
+  end 
+  !COLORS
+
+  CELL_BOUNDS dup
+  y @int 
+  x @int 
+  rect
+
+  cell @ptr @int 0 != if 0x0001 !COLORS
+    y @int CELL_FONT_CENTER +
+    x @int CELL_FONT_CENTER +
+    1
+    CHARS cell @ptr @int ptr+
+    textUtf8
+  end
+end
+
+proc draw-grid in
+  0 while dup COLL < do
+    0 while dup ROWS < do
+      over over cast(cell) 
+      draw-cell
+      1 +
+    end drop
+    1 +
+  end drop
+end
+
 proc update in 
+  input-mode @bool lnot if
+    cell-under-pointer
+    highlighted !ptr
+  end
+
   frame-count++
   
-  frame-count @int delta_time % 0 = if
+  frame-count @int delta_time 2 * % 0 = if
+    reset-control-state
+  else frame-count @int delta_time % 0 = if*
     check-keys
     check-mouse
   end
 
-  input-mode @bool lnot if
-    @MOUSE.X GRID_OFFSET.X -
-    @MOUSE.Y GRID_OFFSET.Y - highlight-calc if
-      cast(cell)
-      highlighted !ptr
-    else drop drop
-      NULL highlighted !ptr
-    end
-  end
-
   draw-current-board
-
-  0 while dup COLL < do
-    0 while dup ROWS < do
-      over over draw-cell
-        1 +
-    end drop
-    1 +
-  end drop
+  draw-grid
 
   0x0004 !COLORS
+  3 56 1 CHARS player @bool cast(int) 1 + ptr+ textUtf8
   3 63 " Turn"c text
-  3 56 1 chars player @bool cast(int) 1 + ptr+ textUtf8
 end
