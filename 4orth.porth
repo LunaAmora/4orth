@@ -82,8 +82,8 @@ in
             //  here puts ": FIXME: not implemented yet\n" puts
             //  1 exit
           else type OP_CALL_LIKE = if*
-             " call $pop"              bfd bputs
-             " call_indirect (type 0)" bfd bputs
+             " call $pop"                      bfd bputs
+             " call_indirect (type $CallLike)" bfd bputs
             //  here puts ": FIXME: not implemented yet\n" puts
             //  1 exit
           else type OP_BIND_LET = if*
@@ -497,6 +497,7 @@ in
         1 exit
       end
 
+      "(type $CallLike (func))\n"                bfd bputs
       "(import \"env\" \"memory\" (memory 1))\n" bfd bputs
 
       0 while dup ops-count @64 < do
