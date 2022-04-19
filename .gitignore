@@ -2,6 +2,7 @@
 !LICENCE
 !/**/
 !*.*
+!Makefile
 *.asm
 *.wat
 *.wasm
