@@ -1,0 +1,89 @@
+include "wasm4.porth"
+
+proc cstrlen ptr -- int in
+  dup
+  while dup @8 0 != do 1 ptr+ end
+  swap ptr-diff
+end
+
+inline proc cstr-to-str ptr -- int ptr in dup cstrlen swap end
+
+const offsetof(Str.count) sizeof(u64) offset end
+const offsetof(Str.data) sizeof(ptr) offset end
+const sizeof(Str) reset end
+
+inline proc Str.count ptr -- ptr in offsetof(Str.count) ptr+ end
+inline proc Str.data ptr -- ptr in offsetof(Str.data) ptr+ end
+inline proc @Str.count ptr -- int in Str.count @64 end
+inline proc @Str.data ptr -- ptr in Str.data  @64 cast(ptr) end
+inline proc !Str.count int ptr in Str.count !64 end
+inline proc !Str.data ptr ptr in Str.data  !64 end
+
+inline proc @Str ptr -- int ptr in
+  dup  @Str.count
+  swap @Str.data
+end
+
+inline proc !Str int ptr ptr in
+  swap over
+  !Str.data
+  !Str.count
+end
+
+inline proc str-null -- int ptr in 0 NULL end
+
+inline proc str-chop-one-left ptr in
+   dup Str.count dec64
+       Str.data inc64
+end
+
+inline proc str-chop-one-right ptr in
+  Str.count dec64
+end
+
+proc ?space int -- bool in
+  dup
+  ' '  = swap dup
+  '\n' = swap 
+  '\r' = lor lor
+end
+
+proc str-trim-left ptr in // input --
+  while
+    dup @Str.count 0 > if
+      dup @Str.data @8 ?space
+    else false end
+  do
+    dup str-chop-one-left
+  end
+  drop
+end
+
+inline proc ?str-empty ptr -- bool in
+  offsetof(Str.count) ptr+
+  @64
+  0 =
+end
+
+inline proc puts int ptr in traceUtf8 end
+
+const PUTU_BUFFER_CAP 32 end
+memory buffer PUTU_BUFFER_CAP end
+proc putu
+  int // number
+in
+  dup 0 = if
+    "0" puts
+  else
+    buffer PUTU_BUFFER_CAP ptr+
+    while over 0 != do
+      1 ptr- dup rot
+      10 divmod
+      rot swap '0' + swap !8 swap
+    end
+
+    dup
+    buffer PUTU_BUFFER_CAP ptr+ swap ptr-diff swap puts
+  end
+  drop
+end
