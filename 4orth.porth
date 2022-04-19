@@ -832,7 +832,9 @@ proc main in
     end
 
     input-file-path-cstr @ptr cstr-to-str remove-ext base-file-path !Str
-    base-file-path @Str dirname append-std include-paths-add
+    "4orth" getenv cstr-to-str dirname over over append-std 
+    include-paths-add
+    include-paths-add
 
     input-file-path-cstr @ptr compile-program-into-ops
     unsafe @bool lnot if type-check-program end
