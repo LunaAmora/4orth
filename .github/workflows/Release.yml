@@ -36,8 +36,8 @@ jobs:
           TAG: ${{ steps.get_version.outputs.tag }}
         run: |
           mv 4orth porth/
-          mv wasm4.porth porth/std
-          mv w4std.porth porth/std
+          mv std/wasm4.porth porth/std
+          mv std/w4std.porth porth/std
           cd porth
           zip -r ../"4oth-${TAG}-linux".zip *
         
