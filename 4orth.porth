@@ -32,7 +32,6 @@ const wat-return-stack wat-porth-stack sizeof(return-stack) - end
 
 memory wat-global-mem sizeof(int) end
 memory skip-inline sizeof(bool) end
-memory skip-op sizeof(int) end
 
 memory proc-layers sizeof(int) OPS_CAP * end
 memory proc-index  sizeof(int) end
@@ -54,336 +53,340 @@ proc generate-op-wat
   ptr // bfd
 in
   let ip bfd in
-    skip-op @int 0 > if
-      skip-op dec64
-    else
-      ip sizeof(Op) * ops +ptr
-      let op in
-        op Op.type ptr+ @int
-        op Op.operand ptr+ @int
-        let type operand in
-          assert "Exhaustive handling of Op types in generate-op-wat" COUNT_OPS 25 = end
-          skip-inline @bool  if
-          else type OP_RET = if*
-              operand 0 > if
-                "\n i32.const "       bfd bputs operand bfd bputu
-                " call $free_local"   bfd bputs
-              end
-             ")" bfd bputs
-          else type OP_PUSH_INT = if*
-             " i32.const "   bfd bputs operand bfd bputu
-             " call $push"   bfd bputs
-          else type OP_PUSH_BOOL = if*
-             " i32.const "   bfd bputs operand bfd bputu
-             " call $push"   bfd bputs
-          else type OP_PUSH_PTR = if*
-             " i32.const "   bfd bputs operand bfd bputu
-             " call $push"   bfd bputs
-          else type OP_PUSH_ADDR = if*
-             " i32.const "   bfd bputs
-             proc-index @int while dup 0 >= over proc-get operand != land do
-              1 -
-             end bfd bputu
-             " call $push"   bfd bputs
-          else type OP_CALL_LIKE = if*
-             " call $pop"                      bfd bputs
-             " call_indirect (type $CallLike)" bfd bputs
-          else type OP_BIND_LET = if*
-            0 while dup operand < do
-              " call $pop"                         bfd bputs
-              " call $push_bind\n"                 bfd bputs
-              1 +
-            end drop
-          else type OP_BIND_PEEK = if*
-              here puts ": FIXME: Peek not implemented yet\n" puts
-              1 exit
-          else type OP_UNBIND = if*
-              " i32.const "                        bfd bputs operand bfd bputu
-              " call $unbind"                      bfd bputs
-          else type OP_PUSH_BIND = if*
-              " i32.const "                        bfd bputs operand bfd bputu
-              " call $bind_peek"                   bfd bputs
-          else type OP_PUSH_LOCAL_MEM = if*
-              " global.get $RETURN_STACK"          bfd bputs
-              " global.get $RETURN_STACK i32.load" bfd bputs
-              " i32.const "                        bfd bputs operand 8 / 4 * bfd bputu
-              " i32.sub i32.add"                   bfd bputs
-              " call $push"                        bfd bputs
-          else type OP_PUSH_GLOBAL_MEM = if*
-             " i32.const "      bfd bputs operand wat-global-mem @int + bfd bputu
-             " call $push"      bfd bputs
-          else type OP_PUSH_STR = if*
-             " i32.const "      bfd bputs op Op.token ptr+ Token.value ptr+ @Str drop bfd bputu
-             " call $push"      bfd bputs
-             " global.get $str" bfd bputs operand bfd bputu
-             " call $push"      bfd bputs
-          else type OP_PUSH_CSTR = if*
-             " global.get $str" bfd bputs operand bfd bputu
-             " call $push"      bfd bputs
-          else type OP_IF = if*
-              ifstar-current inc64
-             " call $pop"       bfd bputs
-             " if"              bfd bputs
-          else type OP_IFSTAR = if*
-             ifstar-count.inc
-             " call $pop"       bfd bputs
-             " if"              bfd bputs
-          else type OP_ELSE = if*
-             " else"            bfd bputs
-          else type OP_END_WHILE = if*
-             " br $"            bfd bputs operand 1 + bfd bputu
-             " end"             bfd bputs
-             " end"             bfd bputs
-          else type OP_END_IF = if*
-             while @ifstar-count 0 > do
-                " end" bfd bputs
-                ifstar-count.dec
-             end ifstar-current dec64
+    ip sizeof(Op) * ops +ptr
+    let op in
+      op Op.type ptr+ @int
+      op Op.operand ptr+ @int
+      let type operand in
+        assert "Exhaustive handling of Op types in generate-op-wat" COUNT_OPS 25 = end
+        skip-inline @bool  if
+        else type OP_RET = if*
+            operand 0 > if
+              "\n i32.const "       bfd bputs operand bfd bputu
+              " call $free_local"   bfd bputs
+            end
+            ")" bfd bputs
+        else type OP_PUSH_INT = if*
+            " i32.const "   bfd bputs operand bfd bputu
+            " call $push"   bfd bputs
+        else type OP_PUSH_BOOL = if*
+            " i32.const "   bfd bputs operand bfd bputu
+            " call $push"   bfd bputs
+        else type OP_PUSH_PTR = if*
+            " i32.const "   bfd bputs operand bfd bputu
+            " call $push"   bfd bputs
+        else type OP_PUSH_ADDR = if*
+            " i32.const "   bfd bputs
+            proc-index @int while dup 0 >= over proc-get operand != land do
+            1 -
+            end bfd bputu
+            " call $push"   bfd bputs
+        else type OP_CALL_LIKE = if*
+            " call $pop"                      bfd bputs
+            " call_indirect (type $CallLike)" bfd bputs
+        else type OP_BIND_LET = if*
+          0 while dup operand < do
+            " call $pop"                         bfd bputs
+            " call $push_bind\n"                 bfd bputs
+            1 +
+          end drop
+        else type OP_BIND_PEEK = if*
+          0 while dup operand < do
+            " call $pop"                         bfd bputs
+            " call $push_bind\n"                 bfd bputs
+            1 +
+          end drop
+          0 while dup operand < do
+            " i32.const "          bfd bputs dup bfd bputu
+            " call $bind_peek\n"                 bfd bputs
+            1 +
+          end drop
+        else type OP_UNBIND = if*
+            " i32.const "                        bfd bputs operand bfd bputu
+            " call $unbind"                      bfd bputs
+        else type OP_PUSH_BIND = if*
+            " i32.const "                        bfd bputs operand bfd bputu
+            " call $bind_peek"                   bfd bputs
+        else type OP_PUSH_LOCAL_MEM = if*
+            " global.get $RETURN_STACK"          bfd bputs
+            " global.get $RETURN_STACK i32.load" bfd bputs
+            " i32.const "                        bfd bputs operand 8 / 4 * bfd bputu
+            " i32.sub i32.add"                   bfd bputs
+            " call $push"                        bfd bputs
+        else type OP_PUSH_GLOBAL_MEM = if*
+            " i32.const "      bfd bputs operand wat-global-mem @int + bfd bputu
+            " call $push"      bfd bputs
+        else type OP_PUSH_STR = if*
+            " i32.const "      bfd bputs op Op.token ptr+ Token.value ptr+ @Str drop bfd bputu
+            " call $push"      bfd bputs
+            " global.get $str" bfd bputs operand bfd bputu
+            " call $push"      bfd bputs
+        else type OP_PUSH_CSTR = if*
+            " global.get $str" bfd bputs operand bfd bputu
+            " call $push"      bfd bputs
+        else type OP_IF = if*
+            ifstar-current inc64
+            " call $pop"       bfd bputs
+            " if"              bfd bputs
+        else type OP_IFSTAR = if*
+            ifstar-count.inc
+            " call $pop"       bfd bputs
+            " if"              bfd bputs
+        else type OP_ELSE = if*
+            " else"            bfd bputs
+        else type OP_END_WHILE = if*
+            " br $"            bfd bputs operand 1 + bfd bputu
+            " end"             bfd bputs
+            " end"             bfd bputs
+        else type OP_END_IF = if*
+            while @ifstar-count 0 > do
+              " end" bfd bputs
+              ifstar-count.dec
+            end ifstar-current dec64
 
-             " end"             bfd bputs
-          else type OP_WHILE = if*
-             " block $while"    bfd bputs 
-             " loop $"          bfd bputs operand bfd bputu
-          else type OP_DO = if*
-             " call $pop"       bfd bputs
-             " i32.eqz"         bfd bputs
-             " br_if $while"    bfd bputs
-          else type OP_PREP_PROC = if*
-              op Op.token ptr+ Token.text ptr+ @Str proc-lookup-by-name dup Proc.name ptr+ 
-              let prok name in
-                prok NULL ptr= if
-                  here eputs ": Assertion Failed: couldn't find proc name by token text" eputs
-                  1 exit
-                end
-
-                prok Proc.inlinable ptr+ @bool 
-                prok Proc.imported  ptr+ @bool lor 
-                name @Str "rnd" streq lor if
-                  true skip-inline !bool
-                else
-                  false skip-inline !bool
-                  "\n(elem (i32.const " bfd bputs ip proc-iota bfd bputu 
-                  ") $f"                bfd bputs ip bfd bputu 
-                  ")\n(func $f"         bfd bputs ip bfd bputu
-
-                  name @Str "main" streq if
-                    " (export \"start\")"  bfd bputs
-                  else name @Str "update" streq if*
-                    " (export \"update\")" bfd bputs
-                  end
-
-                  operand 0 > if
-                    "\n i32.const "      bfd bputs operand bfd bputu
-                    " call $aloc_local"  bfd bputs 
-                  end
-                end
-              end
-          else type OP_CALL = if*
-              op Op.token ptr+ Token.text ptr+ @Str proc-lookup-by-name
-              let prok in
-                prok NULL ptr= if
-                  here eputs ": Assertion Failed: couldn't find proc name by token text" eputs
-                  1 exit
-                end
-                prok Proc.imported ptr+ @bool if
-                  prok Proc.ins ptr+
-                  TypeStack.top ptr+ @ptr 
-                  dup NULL ptr!= if
-                    while dup NULL ptr!= do
-                      " call $pop" bfd bputs
-                      TypeFrame.prev ptr+ @ptr
-                    end drop
-                  else drop end
-                end
-                " call $f" bfd bputs
-                prok Proc.name ptr+ @Str "rnd" streq if
-                  "rnd"   bfd bputs
-                else
-                  operand bfd bputu
-                end
-              end
-          else type OP_INLINED = if*
-          else type OP_INTRINSIC = if*
-              assert "Exhaustive handling of Intrinsics in generate-op-wat"
-                COUNT_INTRINSICS 47 =
-              end
-
-              operand INTRINSIC_PLUS = if
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.add"           bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_MINUS = if*
-                  " call $swap"        bfd bputs
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.sub"           bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_MUL = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.mul"           bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_DIVMOD = if*
-                  " call $divmod"      bfd bputs
-              else operand INTRINSIC_IDIVMOD = if*
-                  " call $divmod"      bfd bputs
-              else operand INTRINSIC_MAX = if*
-                  " call $pop"         bfd bputs
-                  " f32.convert_i32_u" bfd bputs
-                  " call $pop"         bfd bputs
-                  " f32.convert_i32_u" bfd bputs
-                  " f32.max "          bfd bputs
-                  " i32.trunc_f32_u"   bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_SHR = if*
-                  " call $swap"        bfd bputs
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.shr_u"         bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_SHL = if*
-                  " call $swap"        bfd bputs
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.shl"           bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_OR = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.or"            bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_AND = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.and"           bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_XOR = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.xor"           bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_NOT = if*
-                  " call $pop"         bfd bputs
-                  " if"                bfd bputs
-                  " i32.const 0"       bfd bputs
-                  " call $push"        bfd bputs
-                  " else"              bfd bputs
-                  " i32.const 1"       bfd bputs
-                  " call $push"        bfd bputs
-                  " end\n"             bfd bputs
-              else operand INTRINSIC_PRINT = if*
-                  " call $pop"         bfd bputs
-                  " call $f"           bfd bputs
-                  "trace"              proc-lookup-by-name 
-                  Proc.addr ptr+ @int  bfd bputu
-              else operand INTRINSIC_EQ = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.eq"            bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_GT = if*
-                  " call $swap"        bfd bputs
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.gt_u"          bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_LT = if*
-                  " call $swap"        bfd bputs
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.lt_u"          bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_GE = if*
-                  " call $swap"        bfd bputs
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.ge_u"          bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_LE = if*
-                  " call $swap"        bfd bputs
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.le_u"          bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_NE = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.ne"            bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_DUP = if*
-                  " call $dup"         bfd bputs
-              else operand INTRINSIC_SWAP = if*
-                  " call $swap"        bfd bputs
-              else operand INTRINSIC_DROP = if*
-                  " call $drop"        bfd bputs
-              else operand INTRINSIC_OVER = if*
-                  " call $over"        bfd bputs
-              else operand INTRINSIC_ROT = if*
-                  " call $rot"         bfd bputs
-              else operand INTRINSIC_LOAD8 = if*
-                  " call $pop"         bfd bputs
-                  " i32.load8_u"       bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_STORE8 = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.store8"        bfd bputs
-              else operand INTRINSIC_LOAD16 = if*
-                  " call $pop"         bfd bputs
-                  " i32.load16_u"      bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_STORE16 = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.store16"       bfd bputs
-              else operand INTRINSIC_LOAD32 = if*
-                  " call $pop"         bfd bputs
-                  " i32.load"          bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_STORE32 = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.store"         bfd bputs
-              else operand INTRINSIC_LOAD64 = if*
-                  " call $pop"         bfd bputs
-                  " i32.load"          bfd bputs
-                  " call $push"        bfd bputs
-              else operand INTRINSIC_STORE64 = if*
-                  " call $pop"         bfd bputs
-                  " call $pop"         bfd bputs
-                  " i32.store"         bfd bputs
-              else operand INTRINSIC_ARGC = if*
-              else operand INTRINSIC_ARGV = if*
-              else operand INTRINSIC_ENVP = if*
-              else operand INTRINSIC_CAST_PTR = if*
-              else operand INTRINSIC_CAST_INT = if*
-              else operand INTRINSIC_CAST_BOOL = if*
-              else operand INTRINSIC_CAST_ADDR = if*
-              else operand INTRINSIC_SYSCALL0 = if*
-              else operand INTRINSIC_SYSCALL1 = if*
-              else operand INTRINSIC_SYSCALL2 = if*
-              else operand INTRINSIC_SYSCALL3 = if*
-              else operand INTRINSIC_SYSCALL4 = if*
-              else operand INTRINSIC_SYSCALL5 = if*
-              else operand INTRINSIC_SYSCALL6 = if*
-              else operand INTRINSIC_??? = if*
-              else
-                here eputs ": unreachable. Invalid intrinsic.\n" eputs
+            " end"             bfd bputs
+        else type OP_WHILE = if*
+            " block $while"    bfd bputs 
+            " loop $"          bfd bputs operand bfd bputu
+        else type OP_DO = if*
+            " call $pop"       bfd bputs
+            " i32.eqz"         bfd bputs
+            " br_if $while"    bfd bputs
+        else type OP_PREP_PROC = if*
+            op Op.token ptr+ Token.text ptr+ @Str proc-lookup-by-name dup Proc.name ptr+ 
+            let prok name in
+              prok NULL ptr= if
+                here eputs ": Assertion Failed: couldn't find proc name by token text" eputs
                 1 exit
               end
-          else
-            here eputs ": unreachable. Invalid op.\n" eputs
-            1 exit
-          end
-          skip-inline @bool if
-            type OP_RET = if
-              false skip-inline !bool
+
+              prok Proc.inlinable ptr+ @bool 
+              prok Proc.imported  ptr+ @bool lor 
+              name @Str "rnd" streq lor if
+                true skip-inline !bool
+              else
+                false skip-inline !bool
+                "\n(elem (i32.const " bfd bputs ip proc-iota bfd bputu 
+                ") $f"                bfd bputs ip bfd bputu 
+                ")\n(func $f"         bfd bputs ip bfd bputu
+
+                name @Str "main" streq if
+                  " (export \"start\")"  bfd bputs
+                else name @Str "update" streq if*
+                  " (export \"update\")" bfd bputs
+                end
+
+                operand 0 > if
+                  "\n i32.const "      bfd bputs operand bfd bputu
+                  " call $aloc_local"  bfd bputs 
+                end
+              end
             end
-          else
-            op bfd generate-op-comment
-            // "\n" bfd bputs
+        else type OP_CALL = if*
+            op Op.token ptr+ Token.text ptr+ @Str proc-lookup-by-name
+            let prok in
+              prok NULL ptr= if
+                here eputs ": Assertion Failed: couldn't find proc name by token text" eputs
+                1 exit
+              end
+              prok Proc.imported ptr+ @bool if
+                prok Proc.ins ptr+
+                TypeStack.top ptr+ @ptr 
+                dup NULL ptr!= if
+                  while dup NULL ptr!= do
+                    " call $pop" bfd bputs
+                    TypeFrame.prev ptr+ @ptr
+                  end drop
+                else drop end
+              end
+              " call $f" bfd bputs
+              prok Proc.name ptr+ @Str "rnd" streq if
+                "rnd"   bfd bputs
+              else
+                operand bfd bputu
+              end
+            end
+        else type OP_INLINED = if*
+        else type OP_INTRINSIC = if*
+            assert "Exhaustive handling of Intrinsics in generate-op-wat"
+              COUNT_INTRINSICS 47 =
+            end
+
+            operand INTRINSIC_PLUS = if
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.add"           bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_MINUS = if*
+                " call $swap"        bfd bputs
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.sub"           bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_MUL = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.mul"           bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_DIVMOD = if*
+                " call $divmod"      bfd bputs
+            else operand INTRINSIC_IDIVMOD = if*
+                " call $divmod"      bfd bputs
+            else operand INTRINSIC_MAX = if*
+                " call $pop"         bfd bputs
+                " f32.convert_i32_u" bfd bputs
+                " call $pop"         bfd bputs
+                " f32.convert_i32_u" bfd bputs
+                " f32.max "          bfd bputs
+                " i32.trunc_f32_u"   bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_SHR = if*
+                " call $swap"        bfd bputs
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.shr_u"         bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_SHL = if*
+                " call $swap"        bfd bputs
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.shl"           bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_OR = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.or"            bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_AND = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.and"           bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_XOR = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.xor"           bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_NOT = if*
+                " call $pop"         bfd bputs
+                " if"                bfd bputs
+                " i32.const 0"       bfd bputs
+                " call $push"        bfd bputs
+                " else"              bfd bputs
+                " i32.const 1"       bfd bputs
+                " call $push"        bfd bputs
+                " end\n"             bfd bputs
+            else operand INTRINSIC_PRINT = if*
+                " call $pop"         bfd bputs
+                " call $f"           bfd bputs
+                "trace"              proc-lookup-by-name 
+                Proc.addr ptr+ @int  bfd bputu
+            else operand INTRINSIC_EQ = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.eq"            bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_GT = if*
+                " call $swap"        bfd bputs
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.gt_u"          bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_LT = if*
+                " call $swap"        bfd bputs
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.lt_u"          bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_GE = if*
+                " call $swap"        bfd bputs
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.ge_u"          bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_LE = if*
+                " call $swap"        bfd bputs
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.le_u"          bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_NE = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.ne"            bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_DUP = if*
+                " call $dup"         bfd bputs
+            else operand INTRINSIC_SWAP = if*
+                " call $swap"        bfd bputs
+            else operand INTRINSIC_DROP = if*
+                " call $drop"        bfd bputs
+            else operand INTRINSIC_OVER = if*
+                " call $over"        bfd bputs
+            else operand INTRINSIC_ROT = if*
+                " call $rot"         bfd bputs
+            else operand INTRINSIC_LOAD8 = if*
+                " call $pop"         bfd bputs
+                " i32.load8_u"       bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_STORE8 = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.store8"        bfd bputs
+            else operand INTRINSIC_LOAD16 = if*
+                " call $pop"         bfd bputs
+                " i32.load16_u"      bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_STORE16 = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.store16"       bfd bputs
+            else operand INTRINSIC_LOAD32 = if*
+                " call $pop"         bfd bputs
+                " i32.load"          bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_STORE32 = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.store"         bfd bputs
+            else operand INTRINSIC_LOAD64 = if*
+                " call $pop"         bfd bputs
+                " i32.load"          bfd bputs
+                " call $push"        bfd bputs
+            else operand INTRINSIC_STORE64 = if*
+                " call $pop"         bfd bputs
+                " call $pop"         bfd bputs
+                " i32.store"         bfd bputs
+            else operand INTRINSIC_ARGC = if*
+            else operand INTRINSIC_ARGV = if*
+            else operand INTRINSIC_ENVP = if*
+            else operand INTRINSIC_CAST_PTR = if*
+            else operand INTRINSIC_CAST_INT = if*
+            else operand INTRINSIC_CAST_BOOL = if*
+            else operand INTRINSIC_CAST_ADDR = if*
+            else operand INTRINSIC_SYSCALL0 = if*
+            else operand INTRINSIC_SYSCALL1 = if*
+            else operand INTRINSIC_SYSCALL2 = if*
+            else operand INTRINSIC_SYSCALL3 = if*
+            else operand INTRINSIC_SYSCALL4 = if*
+            else operand INTRINSIC_SYSCALL5 = if*
+            else operand INTRINSIC_SYSCALL6 = if*
+            else operand INTRINSIC_??? = if*
+            else
+              here eputs ": unreachable. Invalid intrinsic.\n" eputs
+              1 exit
+            end
+        else
+          here eputs ": unreachable. Invalid op.\n" eputs
+          1 exit
+        end
+        skip-inline @bool if
+          type OP_RET = if
+            false skip-inline !bool
           end
+        else
+          op bfd generate-op-comment
+          // "\n" bfd bputs
         end
       end
     end
