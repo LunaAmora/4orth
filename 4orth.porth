@@ -175,6 +175,8 @@ in
                   " (export \"update\")" bfd bputs
                 end
 
+                " ;; proc " bfd bputs name @Str bfd bputs
+
                 operand 0 > if
                   "\n i32.const "      bfd bputs operand bfd bputu
                   " call $aloc_local"  bfd bputs 
