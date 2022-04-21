@@ -249,18 +249,19 @@ proc draw-cell int int ptr in
 end
 
 proc draw-board ptr in
-  memory x sizeof(int) end
-  memory y sizeof(int) end
-
-  dup @board.coord
-  BORDER_SIZE BOARD_HEIGHT + * GRID_OFFSET.Y + y !int
-  BORDER_SIZE BOARD_WIDTH  + * GRID_OFFSET.X + x !int
-  0 while dup BOARD_CELLS < do
-    over over @board.cell(i)
-    x @int y @int rot
-    draw-cell
-    1 +
-  end drop drop
+  peek board in
+    @board.coord
+    BORDER_SIZE BOARD_HEIGHT + * GRID_OFFSET.Y + swap
+    BORDER_SIZE BOARD_WIDTH  + * GRID_OFFSET.X + 
+    let y x in
+      0 while dup BOARD_CELLS < do
+        board over @board.cell(i)
+        x y rot
+        draw-cell
+        1 +
+      end drop
+    end
+  end
 end
 
 proc draw-grid in
