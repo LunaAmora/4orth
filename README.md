@@ -63,7 +63,6 @@ SUBCOMMANDS:
 
 4orth is not feature complete with the current open version of Porth and Wasm-4 yet. The current set of features not supported consists of:
 
-- Let-bindings (let and peek keywords)
 - Int64 (all integers are treated as Int32, if an overflow occurs on const evaluation, the .wat file will contain an error)
 - Negative numbers
 - Floats
