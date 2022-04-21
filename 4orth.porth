@@ -904,6 +904,7 @@ proc main in
       fpb-end
         tmp-end
         "wasm2wat"c             tmp-append-ptr
+        "--enable-bulk-memory"c tmp-append-ptr
         fpb-end
           base-file-path @Str fpb-append drop
           ".wasm"              fpb-append drop
