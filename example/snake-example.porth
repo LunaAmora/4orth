@@ -4,8 +4,6 @@ include "wasm4.porth"
 memory frame-count sizeof(int) end
 memory prev-state  sizeof(u8)  end
 
-inline proc frame-count++ in frame-count @int 1 + frame-count !int end
-
 // Game consts
 const sizeof(coord) sizeof(int) 2 * end
 const sizeof(cell)   8 end
@@ -21,7 +19,8 @@ inline proc !y int ptr in y+ !int end
 inline proc @x ptr -- int in @int end
 inline proc @y ptr -- int in y+ @int end
 
-inline proc snake++ ptr -- ptr in 1 sizeof(coord) * ptr+ end
+inline proc snake-incBy ptr int -- ptr in sizeof(coord) * ptr+ end
+inline proc snake++     ptr     -- ptr in 1 snake-incBy end
 
 // Snake values
 const snake.length sizeof(int)   offset end
@@ -76,10 +75,12 @@ inline proc snake-init in
 
   @snake-length snake-head 
   while over 0 > do
-    over over !x
-    10   over !y
-    swap 1 -
-    swap snake++
+    let xPos snake* in
+      xPos snake* !x
+      10   snake* !y
+      xPos   1 -
+      snake* snake++
+    end
   end drop drop
 end
 
@@ -101,63 +102,58 @@ end
 // Change snake direction based on input xdir and ydir.
 // If value is 1 it's positive, otherwise it's negative
 proc input-dir int int in
-  dup 
-  0 != ?movingx land if 
-    !snake-dir
-  else over 
-  0 != ?movingy land if*
-    !snake-dir
-  else drop drop end
+  let x y in
+    y 0 != ?movingx land
+    x 0 != ?movingy land lor if
+      x y !snake-dir
+    end
+  end
 end
 
 // Compare current pressed keys with keys pressed in the last checked frame and calls input-dir
 proc check-keys in
-  @GAMEPAD dup dup
-  prev-state @8 xor and swap
-  prev-state !8
-
-  dup 0 != if dup
-    $BUTTON_LEFT  and 0 != if  2 0 
-    else dup
-    $BUTTON_RIGHT and 0 != if* 1 0 
-    else dup
-    $BUTTON_DOWN  and 0 != if* 0 1 
-    else dup
-    $BUTTON_UP    and 0 != if* 0 2
-    else 0 0
-    end input-dir drop
-  else drop end
+  @GAMEPAD 
+  let keys in
+    keys prev-state @8 xor keys and
+    keys prev-state !8
+    peek pressed in 0 != if
+      pressed $BUTTON_LEFT  and 0 != if  2 0 
+      else
+      pressed $BUTTON_RIGHT and 0 != if* 1 0 
+      else
+      pressed $BUTTON_DOWN  and 0 != if* 0 1 
+      else
+      pressed $BUTTON_UP    and 0 != if* 0 2
+      else 0 0 end input-dir
+    end end
+  end
 end
 
 // Return the wrapped snake position around the screen given its position and direction
 proc clamp-wrap int int -- int in
-  memory up sizeof(bool) end
-  1 = up !bool
-  memory val sizeof(int) end
-  val !int
-
-  sizeof(grid) 1 - 0       //screen limits
-  up @bool if swap end     //check based on direction
-  val @int = lnot if drop  //if not at the limits, just increment/decrement
-    val @int 1 
-    up  @bool 
-    if + else - end 
+  1 = let pos isPositive in
+    sizeof(grid) 1 - 0       //screen limits
+    isPositive if swap end   //check based on direction
+    pos = lnot if drop       //if not at the limits, just increment/decrement
+      pos 1 isPositive
+      if + else - end 
+    end
   end
 end
 
 // Update every part of the snake body to its new position
 proc snake-update in
-  memory snake* sizeof(ptr) end
-
   snake-head @x 
   snake-head @y
   snake-head 
-  while snake++ dup snake-tail ptr< do snake* !ptr
-    snake* @ptr @x
-    snake* @ptr @y rot
-    snake* @ptr !y rot
-    snake* @ptr !x
-    snake* @ptr 
+  while snake++ dup snake-tail ptr< do
+    let x y snake* in
+      snake* @x
+      snake* @y
+      y snake* !y
+      x snake* !x
+      snake* 
+    end
   end drop drop drop
 
   ?movingx if
@@ -182,28 +178,24 @@ proc check-fruit in
 end
 
 proc check-death -- bool in
-  memory dead sizeof(bool) end
-
-  snake-tail snake-head snake++
-  while over over ptr> dead @bool lnot land do
-    dup  @x snake-head @x =
-    over @y snake-head @y = land dead !bool
-    snake++
-  end 
-  drop drop
-
-  dead @bool
+  false snake-head 3 snake-incBy
+  while over lnot over snake-tail ptr< land do
+    let isDead snake* in
+      snake* @x snake-head @x =
+      snake* @y snake-head @y = land 
+      snake* snake++
+    end
+  end drop
 end
 
 // Draw a 8 x 8 rectangle in a given coord
 proc draw-rect int int in
-  memory x sizeof(int) end
-  memory y sizeof(int) end
-  y !int x !int
-  sizeof(cell) dup
-  y @int sizeof(cell) *
-  x @int sizeof(cell) *
-  rect
+  let x y in
+    sizeof(cell) dup
+    y sizeof(cell) *
+    x sizeof(cell) *
+    rect
+  end
 end
 
 // Draws all parts of the snake
@@ -217,9 +209,11 @@ proc snake-draw in
   0x0043 !COLORS
 
   snake-tail snake-head 
-  while snake++ over over ptr> do 
-    dup  @x
-    over @y draw-rect
+  while snake++ over over ptr> do
+    peek snake* in
+      snake* @x
+      snake* @y draw-rect
+    end
   end drop drop
 end
 
@@ -237,7 +231,7 @@ end
 
 // Gameloop
 proc update in
-  frame-count++
+  frame-count inc32
 
   // Only do checks and updates every `delta_time` frames
   frame-count @int delta_time % 0 = if

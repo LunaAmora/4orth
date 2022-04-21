@@ -159,17 +159,14 @@ proc place-and-update in
 end
 
 proc clamp-wrap int int int -- int in
-  memory dir sizeof(bool) end
-  swap 1 = dir !bool
-  memory pos sizeof(int) end
-  swap pos !int
-
-  1 - 0
-  dir @bool if swap end
-  pos @int = lnot if drop
-    pos @int 1 
-    dir @bool 
-    if + else - end 
+  swap 1 = 
+  let pos gridSize isPositive in
+    gridSize 1 - 0
+    isPositive if swap end
+    pos = lnot if drop
+      pos 1 isPositive 
+      if + else - end 
+    end
   end
 end
 
@@ -177,43 +174,40 @@ proc input-dir int int in
   highlighted @ptr ?null if drop drop
     reset-highlight
   else
-    dup 0 != if swap drop
-      highlighted @ptr @coord rot ROWS ROWS * clamp-wrap
-      cell(x,y) highlighted !ptr
-    else drop dup 0 != if*
-      highlighted @ptr @coord swap rot COLL COLL * clamp-wrap swap
-      cell(x,y) highlighted !ptr
-    else drop end
+    let xDir yDir in
+      yDir 0 != if
+        highlighted @ptr @coord 
+        yDir ROWS ROWS * clamp-wrap
+        cell(x,y) highlighted !ptr
+      else xDir 0 != if*
+        highlighted @ptr @coord swap 
+        xDir COLL COLL * clamp-wrap swap
+        cell(x,y) highlighted !ptr
+      end
+    end
   end
 end
 
 proc update-state int ptr -- int in
-  memory prev-state sizeof(ptr) end
-  prev-state !ptr
-  dup dup 
-  prev-state @ptr @8 xor and swap
-  prev-state @ptr !8
+  let keys prev-state in
+    keys prev-state @8 xor keys and
+    keys prev-state !8
+  end
 end
 
 proc check-keys in
   @GAMEPAD gamepad-state update-state
-
-  dup 0 != if dup
-    $BUTTON_1 and cast(bool) over
-    $BUTTON_2 and cast(bool) lor if
+  peek pressed in 0 != if 
+    pressed $BUTTON_1 and cast(bool)
+    pressed $BUTTON_2 and cast(bool) lor if
       place-and-update
-    end  dup
-    $BUTTON_LEFT  and cast(bool) if  2 0 
-    else dup
-    $BUTTON_RIGHT and cast(bool) if* 1 0 
-    else dup
-    $BUTTON_DOWN  and cast(bool) if* 0 1 
-    else dup
-    $BUTTON_UP    and cast(bool) if* 0 2
-    else 0 0
-    end input-dir
-    drop
-  else drop end
+    end  pressed $BUTTON_LEFT  and cast(bool) if  2 0 
+    else pressed $BUTTON_RIGHT and cast(bool) if* 1 0 
+    else pressed $BUTTON_DOWN  and cast(bool) if* 0 1 
+    else pressed $BUTTON_UP    and cast(bool) if* 0 2
+    else 0 0 end
+    input-dir
+  end end
 end
 
 proc draw-current-board in
@@ -230,52 +224,43 @@ proc draw-current-board in
 end
 
 proc draw-cell int int ptr in
-  memory cell sizeof(ptr) end
-  cell !ptr
+  let ix iy cell in 
+    cell @drawOffset
+    iy + swap ix +
+    let y x in
+      cell highlighted @ptr ptr= if
+        0x0024
+      else
+        0x0023
+      end
+      !COLORS
 
-  memory x sizeof(int) end
-  memory y sizeof(int) end 
-  cell @ptr @drawOffset
-  rot + y !int + x !int
+      CELL_BOUNDS dup y x rect
 
-  cell @ptr highlighted @ptr ptr= if
-    0x0024
-  else
-    0x0023
-  end 
-  !COLORS
-
-  CELL_BOUNDS dup
-  y @int 
-  x @int 
-  rect
-
-  cell @ptr @int 0 != if 0x0001 !COLORS
-    y @int CELL_FONT_CENTER +
-    x @int CELL_FONT_CENTER +
-    1
-    CHARS cell @ptr @int ptr+
-    textUtf8
+      cell @int 0 != if 0x0001 !COLORS
+        y CELL_FONT_CENTER +
+        x CELL_FONT_CENTER +
+        1
+        CHARS cell @int ptr+
+        textUtf8
+      end
+    end
   end
 end
 
 proc draw-board ptr in
-  memory board sizeof(ptr) end
-  board !ptr
-  memory n sizeof(int) end
-  0 n !int
+  memory x sizeof(int) end
+  memory y sizeof(int) end
 
-  board @ptr @board.coord
-  GRID_OFFSET.X rot BORDER_SIZE BOARD_WIDTH  + * +
-  GRID_OFFSET.Y rot BORDER_SIZE BOARD_HEIGHT + * +
-  while n @int BOARD_CELLS < do 
-    over over
-    board @ptr 
-    n @int
-    @board.cell(i)
+  dup @board.coord
+  BORDER_SIZE BOARD_HEIGHT + * GRID_OFFSET.Y + y !int
+  BORDER_SIZE BOARD_WIDTH  + * GRID_OFFSET.X + x !int
+  0 while dup BOARD_CELLS < do
+    over over @board.cell(i)
+    x @int y @int rot
     draw-cell
-    n @int 1 + n !int
-  end drop drop 
+    1 +
+  end drop drop
 end
 
 proc draw-grid in

@@ -12,7 +12,7 @@ inline proc get-coord -- int int in coord @int coord 32 ptr+ @int end
 inline proc set-coord    int int in coord !int coord 32 ptr+ !int end
 
 inline proc @gamepad  -- int in $GAMEPAD1 @8 end
-inline proc ++ ptr in inc64 end
+inline proc ++ ptr in inc32 end
 
 proc rnd-coord in
  frame-count @int rnd  65 % 5 +
@@ -27,8 +27,6 @@ proc main in
 end
 
 proc check-keys in
-  memory gamepad sizeof(int) end
-
   @gamepad      dup dup
   prev-state @8 xor and swap
   prev-state !8
