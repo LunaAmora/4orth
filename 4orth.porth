@@ -25,8 +25,10 @@ end
 const wat-string-section  6560    end // 0x19a0
 const sizeof(wasm4-cart)  65535   end // 0xffff
 const sizeof(porth-stack) 64 64 * end // 0x1000
+const sizeof(return-stack) 64 64 * end // 0x1000
 
 const wat-porth-stack sizeof(wasm4-cart) sizeof(porth-stack) - end
+const wat-return-stack wat-porth-stack sizeof(return-stack) - end
 
 memory wat-global-mem sizeof(int) end
 memory skip-inline sizeof(bool) end
@@ -63,6 +65,10 @@ in
           assert "Exhaustive handling of Op types in generate-op-wat" COUNT_OPS 25 = end
           skip-inline @bool  if
           else type OP_RET = if*
+              operand 0 > if
+                "\n i32.const "       bfd bputs operand bfd bputu
+                " call $free_local"   bfd bputs
+              end
              ")" bfd bputs
           else type OP_PUSH_INT = if*
              " i32.const "   bfd bputs operand bfd bputu
@@ -79,57 +85,32 @@ in
               1 -
              end bfd bputu
              " call $push"   bfd bputs
-            //  here puts ": FIXME: not implemented yet\n" puts
-            //  1 exit
           else type OP_CALL_LIKE = if*
              " call $pop"                      bfd bputs
              " call_indirect (type $CallLike)" bfd bputs
-            //  here puts ": FIXME: not implemented yet\n" puts
-            //  1 exit
           else type OP_BIND_LET = if*
-             here puts ": FIXME: not implemented yet\n" puts
-             1 exit
+            0 while dup operand < do
+              " call $pop"                         bfd bputs
+              " call $push_bind\n"                 bfd bputs
+              1 +
+            end drop
           else type OP_BIND_PEEK = if*
-             here puts ": FIXME: not implemented yet\n" puts
-             1 exit
+              here puts ": FIXME: Peek not implemented yet\n" puts
+              1 exit
           else type OP_UNBIND = if*
-             here puts ": FIXME: not implemented yet\n" puts
-             1 exit
+              " i32.const "                        bfd bputs operand bfd bputu
+              " call $unbind"                      bfd bputs
           else type OP_PUSH_BIND = if*
-             here puts ": FIXME: not implemented yet\n" puts
-             1 exit
+              " i32.const "                        bfd bputs operand bfd bputu
+              " call $bind_peek"                   bfd bputs
           else type OP_PUSH_LOCAL_MEM = if*
-             1 while dup ip + sizeof(Op) * ops +ptr Op.type ptr+ @int OP_INLINED = do
-               skip-op inc64
-               1 +
-             end
-             ip + sizeof(Op) * ops +ptr 
-             let nextOp in
-              nextOp Op.type ptr+ @int OP_INTRINSIC = if
-                nextOp Op.operand ptr+ @int 
-                  dup INTRINSIC_STORE32 =  
-                  over INTRINSIC_STORE64 = lor
-                  over INTRINSIC_STORE16 = lor
-                  over INTRINSIC_STORE8 = lor if drop
-                    skip-op inc64
-                    " call $pop"    bfd bputs 
-                    " local.set "   bfd bputs operand sizeof(u64) / bfd bputu
-                else
-                  dup INTRINSIC_LOAD32 =  
-                  over INTRINSIC_LOAD64 = lor
-                  over INTRINSIC_LOAD16 = lor
-                  swap INTRINSIC_LOAD8 = lor if
-                    skip-op inc64
-                  else 0 skip-op !int end 
-                  " local.get "   bfd bputs operand sizeof(u64) / bfd bputu
-                  " call $push"   bfd bputs
-                end
-              else 0 skip-op !int end
-             end
+              " global.get $RETURN_STACK"          bfd bputs
+              " global.get $RETURN_STACK i32.load" bfd bputs
+              " i32.const "                        bfd bputs operand 8 / 4 * bfd bputu
+              " i32.sub i32.add"                   bfd bputs
+              " call $push"                        bfd bputs
           else type OP_PUSH_GLOBAL_MEM = if*
-             " i32.const "      bfd bputs operand bfd bputu
-             " i32.const "      bfd bputs wat-global-mem @int bfd bputu
-             " i32.add"         bfd bputs 
+             " i32.const "      bfd bputs operand wat-global-mem @int + bfd bputu
              " call $push"      bfd bputs
           else type OP_PUSH_STR = if*
              " i32.const "      bfd bputs op Op.token ptr+ Token.value ptr+ @Str drop bfd bputu
@@ -168,8 +149,8 @@ in
              " i32.eqz"         bfd bputs
              " br_if $while"    bfd bputs
           else type OP_PREP_PROC = if*
-              op Op.token ptr+ Token.text ptr+ dup @Str proc-lookup-by-name
-              let name prok in
+              op Op.token ptr+ Token.text ptr+ @Str proc-lookup-by-name dup Proc.name ptr+ 
+              let prok name in
                 prok NULL ptr= if
                   here eputs ": Assertion Failed: couldn't find proc name by token text" eputs
                   1 exit
@@ -177,20 +158,23 @@ in
 
                 prok Proc.inlinable ptr+ @bool 
                 prok Proc.imported  ptr+ @bool lor 
-                prok Proc.name ptr+ @Str "rnd" streq lor if
+                name @Str "rnd" streq lor if
                   true skip-inline !bool
                 else
                   false skip-inline !bool
                   "\n(elem (i32.const " bfd bputs ip proc-iota bfd bputu 
                   ") $f"                bfd bputs ip bfd bputu 
                   ")\n(func $f"         bfd bputs ip bfd bputu
+
+                  name @Str "main" streq if
+                    " (export \"start\")"  bfd bputs
+                  else name @Str "update" streq if*
+                    " (export \"update\")" bfd bputs
+                  end
+
                   operand 0 > if
-                    " (local"           bfd bputs 
-                    operand 0 while over over > do
-                      " i32"            bfd bputs
-                      sizeof(u64) +
-                    end drop drop
-                    ")"                 bfd bputs
+                    "\n i32.const "      bfd bputs operand bfd bputu
+                    " call $aloc_local"  bfd bputs 
                   end
                 end
               end
@@ -241,9 +225,9 @@ in
                   " i32.mul"           bfd bputs
                   " call $push"        bfd bputs
               else operand INTRINSIC_DIVMOD = if*
-                  " call $divmod"     bfd bputs
+                  " call $divmod"      bfd bputs
               else operand INTRINSIC_IDIVMOD = if*
-                  " call $divmod"     bfd bputs
+                  " call $divmod"      bfd bputs
               else operand INTRINSIC_MAX = if*
                   " call $pop"         bfd bputs
                   " f32.convert_i32_u" bfd bputs
@@ -505,7 +489,8 @@ in
         1 +
       end drop
 
-      "\n(global $DATA_STACK i32 (i32.const " bfd bputs wat-porth-stack bfd bputu "))\n" bfd bputs
+      "\n(global $RETURN_STACK i32 (i32.const " bfd bputs wat-return-stack bfd bputu "))"  bfd bputs
+      "\n(global $DATA_STACK   i32 (i32.const " bfd bputs wat-porth-stack bfd bputu "))\n" bfd bputs
 
       0 while dup strlits-count @64 < do
         let i in
@@ -535,57 +520,85 @@ in
         1 exit
       end
 
-      "\n(func $dup (local i32)\n"                     bfd bputs
-      "  call $pop  local.tee 0\n"                     bfd bputs
-      "  call $push local.get 0\n"                     bfd bputs
-      "  call $push)\n\n"                              bfd bputs
-      "(func $swap (local i32)\n"                      bfd bputs
-      "  call $pop\n"                                  bfd bputs
-      "  call $pop  local.set 0\n"                     bfd bputs
-      "  call $push local.get 0\n"                     bfd bputs
-      "  call $push)\n\n"                              bfd bputs
-      "(func $over (local i32 i32)\n"                  bfd bputs
-      "  call $pop  local.set 1\n"                     bfd bputs
-      "  call $pop  local.tee 0\n"                     bfd bputs
-      "  call $push local.get 1\n"                     bfd bputs
-      "  call $push local.get 0\n"                     bfd bputs
-      "  call $push)\n\n"                              bfd bputs
-      "(func $drop call $pop drop)\n\n"                bfd bputs
-      "(func $rot (local i32)\n"                       bfd bputs
-      "  call $pop\n"                                  bfd bputs
-      "  call $pop\n"                                  bfd bputs
-      "  call $pop  local.set 0\n"                     bfd bputs
-      "  call $push\n"                                 bfd bputs
-      "  call $push local.get 0\n"                     bfd bputs
-      "  call $push)\n\n"                              bfd bputs
-      "(func $push (param i32)  (local $offset i32)\n" bfd bputs
-      "  global.get  $DATA_STACK \n"                   bfd bputs
-      "  global.get  $DATA_STACK i32.load\n"           bfd bputs
-      "  local.tee   $offset \n"                       bfd bputs
-      "  i32.const 4 i32.add     i32.add\n"            bfd bputs
-      "  local.get 0 \n"                               bfd bputs
-      "  i32.store\n"                                  bfd bputs
-      "  global.get  $DATA_STACK\n"                    bfd bputs
-      "  local.get   $offset \n"                       bfd bputs
-      "  i32.const 4 i32.add\n"                        bfd bputs
-      "  i32.store)\n\n"                               bfd bputs
-      "(func $pop (result i32) (local $offset i32)\n"  bfd bputs
-      "  global.get  $DATA_STACK \n"                   bfd bputs
-      "  global.get  $DATA_STACK i32.load\n"           bfd bputs
-      "  local.tee   $offset\n"                        bfd bputs
-      "  i32.add     i32.load\n"                       bfd bputs
-      "  global.get  $DATA_STACK\n"                    bfd bputs
-      "  local.get   $offset \n"                       bfd bputs
-      "  i32.const 4 i32.sub\n"                        bfd bputs
-      "  i32.store)\n\n"                               bfd bputs
-      "(func $divmod (local i32 i32)\n"                bfd bputs
-      "  call $swap\n"                                 bfd bputs
-      "  call $pop   local.tee 0\n"                    bfd bputs
-      "  call $pop   local.tee 1\n"                    bfd bputs
-      "  i32.rem_u\n"                                  bfd bputs
-      "  local.get 0 local.get 1\n"                    bfd bputs
-      "  i32.div_u\n"                                  bfd bputs
-      "  call $push call $push)\n"                     bfd bputs
+      "\n(func $dup (local i32)\n"                         bfd bputs
+      "  call $pop  local.tee 0\n"                         bfd bputs
+      "  call $push local.get 0\n"                         bfd bputs
+      "  call $push)\n\n"                                  bfd bputs
+      "(func $swap (local i32)\n"                          bfd bputs
+      "  call $pop\n"                                      bfd bputs
+      "  call $pop  local.set 0\n"                         bfd bputs
+      "  call $push local.get 0\n"                         bfd bputs
+      "  call $push)\n\n"                                  bfd bputs
+      "(func $over (local i32 i32)\n"                      bfd bputs
+      "  call $pop  local.set 1\n"                         bfd bputs
+      "  call $pop  local.tee 0\n"                         bfd bputs
+      "  call $push local.get 1\n"                         bfd bputs
+      "  call $push local.get 0\n"                         bfd bputs
+      "  call $push)\n\n"                                  bfd bputs
+      "(func $drop call $pop drop)\n\n"                    bfd bputs
+      "(func $rot (local i32)\n"                           bfd bputs
+      "  call $pop\n"                                      bfd bputs
+      "  call $pop\n"                                      bfd bputs
+      "  call $pop  local.set 0\n"                         bfd bputs
+      "  call $push\n"                                     bfd bputs
+      "  call $push local.get 0\n"                         bfd bputs
+      "  call $push)\n\n"                                  bfd bputs
+      "(func $push (param i32)  (local $offset i32)\n"     bfd bputs
+      "  global.get  $DATA_STACK \n"                       bfd bputs
+      "  global.get  $DATA_STACK i32.load\n"               bfd bputs
+      "  i32.const 4 i32.add \n"                           bfd bputs
+      "  local.tee   $offset i32.add\n"                    bfd bputs
+      "  local.get 0 i32.store\n"                          bfd bputs
+      "  global.get  $DATA_STACK\n"                        bfd bputs
+      "  local.get   $offset\n"                            bfd bputs
+      "  i32.store)\n\n"                                   bfd bputs
+      "(func $pop (result i32) (local $offset i32)\n"      bfd bputs
+      "  global.get  $DATA_STACK \n"                       bfd bputs
+      "  global.get  $DATA_STACK i32.load\n"               bfd bputs
+      "  local.tee   $offset\n"                            bfd bputs
+      "  i32.add     i32.load\n"                           bfd bputs
+      "  global.get  $DATA_STACK\n"                        bfd bputs
+      "  local.get   $offset \n"                           bfd bputs
+      "  i32.const 4 i32.sub\n"                            bfd bputs
+      "  i32.store)\n\n"                                   bfd bputs
+      "(func $divmod (local i32 i32)\n"                    bfd bputs
+      "  call $pop   local.set 0\n"                        bfd bputs
+      "  call $pop   local.tee 1\n"                        bfd bputs
+      "  local.get 0\n"                                    bfd bputs
+      "  i32.rem_u\n"                                      bfd bputs
+      "  local.get 1 local.get 0\n"                        bfd bputs
+      "  i32.div_u\n"                                      bfd bputs
+      "  call $push call $push)\n\n"                       bfd bputs
+      "(func $aloc_local (param i32)\n"                    bfd bputs
+      "  global.get  $RETURN_STACK\n"                      bfd bputs
+      "  global.get  $RETURN_STACK i32.load\n"             bfd bputs
+      "  local.get 0 i32.add\n"                            bfd bputs
+      "  i32.store)\n\n"                                   bfd bputs
+      "(func $free_local (param i32)\n"                    bfd bputs
+      "  global.get  $RETURN_STACK\n"                      bfd bputs
+      "  global.get  $RETURN_STACK i32.load\n"             bfd bputs
+      "  local.get 0 i32.sub\n"                            bfd bputs
+      "  i32.store)\n\n"                                   bfd bputs
+      "(func $push_bind (param i32) (local $offset i32)\n" bfd bputs
+      "  global.get  $RETURN_STACK\n"                      bfd bputs
+      "  global.get  $RETURN_STACK i32.load\n"             bfd bputs
+      "  i32.const 4 i32.add\n"                            bfd bputs
+      "  local.tee $offset i32.add\n"                      bfd bputs
+      "  local.get 0 i32.store\n"                          bfd bputs
+      "  global.get $RETURN_STACK local.get $offset\n"     bfd bputs
+      "  i32.store)\n\n"                                   bfd bputs
+      "(func $bind_peek (param i32)\n"                     bfd bputs
+      "  global.get  $RETURN_STACK\n"                      bfd bputs
+      "  global.get  $RETURN_STACK i32.load\n"             bfd bputs
+      "  i32.add local.get 0 i32.const 4\n"                bfd bputs
+      "  i32.mul i32.sub i32.load\n"                       bfd bputs
+      "  call $push)\n\n"                                  bfd bputs
+      "(func $unbind (param i32)\n"                        bfd bputs
+      "  global.get  $RETURN_STACK\n"                      bfd bputs
+      "  global.get  $RETURN_STACK i32.load\n"             bfd bputs
+      "  local.get 0 i32.const 4\n"                        bfd bputs
+      "  i32.mul     i32.sub\n"                            bfd bputs
+      "  i32.store)\n"                                     bfd bputs
 
       "main" proc-lookup-by-name
       let main-proc in
@@ -593,24 +606,13 @@ in
           here eputs ": Assertion Failed: type checking phase did not check the existence of `main` procedure\n" eputs
           1 exit
         end
-
-        "\n(func (export \"start\")\n" bfd bputs
-        "  call $f"                    bfd bputs
-        main-proc Proc.addr ptr+ @int  bfd bputu
-        "\n)\n"                        bfd bputs
       end
 
       "update" proc-lookup-by-name
       let update-proc in
         update-proc NULL ptr= if
-          here eputs ": Assertion Failed: `update` procedure is missing\n" eputs
-          1 exit
+          "[INFO] Procedure: `update` is missing\n" puts
         end
-
-        "\n(func (export \"update\")\n" bfd bputs
-        "  call $f"                     bfd bputs
-        update-proc Proc.addr ptr+ @int bfd bputu
-        "\n)\n"                       bfd bputs
       end
 
       "rnd" proc-lookup-by-name

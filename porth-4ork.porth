@@ -2848,9 +2848,9 @@ in
 
                         // NOTE: align all the memories to the size of the word
                         memory-size
-                        7 +
-                        8 /
-                        8 *
+                        3 +
+                        4 /
+                        4 *
 
                         current-proc
                         let prok in
