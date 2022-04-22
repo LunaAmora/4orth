@@ -32,6 +32,7 @@ const GRID_OFFSET.X WINDOW_SIZE GRID_WIDTH  - 2 divmod drop end
 const GRID_OFFSET.Y WINDOW_SIZE GRID_HEIGHT - 2 divmod drop end
 
 const BOARD_CELLS COLL ROWS * end
+const GRID_CELLS BOARD_CELLS BOARD_CELLS * end
 
 const cell.value sizeof(int)     offset end
 const cell.coord sizeof(int) 2 * offset end
@@ -57,10 +58,14 @@ inline proc @board.cell(i)   ptr int     -- ptr in sizeof(cell) * ptr+ end
 inline proc @board.cell(x,y) ptr int int -- ptr in index(x,y) @board.cell(i) end
 
 proc cell(x,y) int int -- ptr in
-  ROWS divmod swap rot
-  COLL divmod swap rot
-  board(x,y) rot rot 
-  swap @board.cell(x,y)
+  let x y in
+    x COLL divmod
+    y ROWS divmod
+    let xBoard xRest yBoard yRest in
+      xBoard yBoard board(x,y)
+      yRest  xRest @board.cell(x,y)
+    end 
+  end
 end
 
 inline proc cell(i) int -- ptr in COLL COLL * divmod swap cell(x,y) end
@@ -103,12 +108,12 @@ proc player-toggle in
 end
 
 proc create-grid in  
-  0 while dup BOARD_CELLS BOARD_CELLS * < do dup dup 
-    COLL COLL * 
+  0 while dup GRID_CELLS < do peek n in
+    n COLL COLL * 
     divmod swap 
-    rot cell(i)
-    !coord  1 +
-  end drop
+    n cell(i)
+    !coord 1 +
+  end end drop
 end
 
 proc reset-highlight in
@@ -159,8 +164,7 @@ proc place-and-update in
 end
 
 proc clamp-wrap int int int -- int in
-  swap 1 = 
-  let pos gridSize isPositive in
+  1 = let pos gridSize isPositive in
     gridSize 1 - 0
     isPositive if swap end
     pos = lnot if drop
@@ -177,11 +181,11 @@ proc input-dir int int in
     let xDir yDir in
       yDir 0 != if
         highlighted @ptr @coord 
-        yDir ROWS ROWS * clamp-wrap
+        ROWS ROWS * yDir clamp-wrap
         cell(x,y) highlighted !ptr
       else xDir 0 != if*
         highlighted @ptr @coord swap 
-        xDir COLL COLL * clamp-wrap swap
+        COLL COLL * xDir clamp-wrap swap
         cell(x,y) highlighted !ptr
       end
     end
