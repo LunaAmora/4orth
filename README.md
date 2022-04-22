@@ -54,6 +54,7 @@ SUBCOMMANDS:
         -opt             Optimize the program with wasm-opt
         -wat             Transforms the stripped program back from the final `.wasm` to `.wat` 
         -s               Silent mode. Don't print any info about compilation phases
+        -o  <file>       File to write the result to 
     png2src <file>       Uses w4 to convert a png file to Porth code and prints it
         -s               Silent mode. Only print the converted code
     help                 Print this help to stdout and exit with 0 code

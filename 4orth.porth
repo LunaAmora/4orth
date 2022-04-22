@@ -738,6 +738,7 @@ in
     "        -opt              Optimize the program with wasm-opt\n"                           fd fputs
     "        -wat              Transforms the stripped program back from the final `.wasm` to `.wat` \n"     fd fputs
     "        -s                Silent mode. Don't print any info about compilation phases\n"   fd fputs
+    "        -o  <file>        File to write the result to \n"                                 fd fputs
     // "    dump <file>           Dump the ops of the program\n"                                  fd fputs
     // "    lex <file>            Produce lexical analysis of the file\n"                         fd fputs
     // "    summary <file>        Print the summary of the program\n"                             fd fputs
@@ -791,6 +792,8 @@ proc main in
 
   memory input-file-path-cstr sizeof(ptr) end
   NULL input-file-path-cstr !ptr
+  memory output-file-path-cstr sizeof(ptr) end
+  NULL output-file-path-cstr !ptr
   memory base-file-path sizeof(Str) end
   0 NULL base-file-path !Str
   memory run sizeof(bool) end
@@ -801,6 +804,8 @@ proc main in
   false wasm2wat !bool
   memory bundle sizeof(bool) end
   false bundle !bool
+  memory output sizeof(bool) end
+  false output !bool
 
   args @@ptr "com"c cstreq if
     while
@@ -822,6 +827,15 @@ proc main in
       else args @@ptr "-wat"c cstreq if*
         true wasm2wat !bool
         true  // continue
+      else args @@ptr "-o"c cstreq if*
+        true output !bool
+        args sizeof(ptr) inc64-by
+          args @@ptr NULL ptr= if
+            false
+          else
+            args @@ptr output-file-path-cstr !ptr
+            true  // continue
+          end
       else
         args @@ptr input-file-path-cstr !ptr
         args sizeof(ptr) inc64-by
@@ -841,6 +855,10 @@ proc main in
 
     input-file-path-cstr @ptr compile-program-into-ops
     unsafe @bool lnot if type-check-program end
+
+    output @bool if
+      output-file-path-cstr @ptr cstr-to-str remove-ext base-file-path !Str
+    end
 
     timeit/from-here
       fpb-end
