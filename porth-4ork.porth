@@ -2390,6 +2390,12 @@ in
   end
 end
 
+proc include-paths-add-env int ptr in
+  getenv-check if 
+    cstr-to-str append-std include-paths-add
+  else drop end
+end
+
 proc include-paths-resolve-file
   int ptr
   --

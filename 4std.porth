@@ -164,3 +164,11 @@ in
     "\""   bfd bputs
   end
 end
+
+proc check-getenv-error ptr -- bool in
+  cstr-to-str "not-valid-env-test-case" getenv cstr-to-str streq lnot
+end
+
+inline proc getenv-check int ptr -- ptr bool in
+  getenv dup check-getenv-error
+end

@@ -752,8 +752,8 @@ proc main in
   // Default include paths
   "."     include-paths-add
   "./std" include-paths-add
-  "_4ORTH" getenv cstr-to-str append-std include-paths-add
-  "PORTH"  getenv cstr-to-str append-std include-paths-add
+  "_4ORTH" include-paths-add-env
+  "PORTH"  include-paths-add-env
 
   memory args sizeof(ptr) end
   argv args !ptr
