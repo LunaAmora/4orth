@@ -25,11 +25,10 @@ end
 const wat-string-section  6560    end // 0x19a0
 const sizeof(wasm4-cart)  65535   end // 0xffff
 const sizeof(porth-stack) 64 64 * end // 0x1000
-const sizeof(return-stack) 64 64 * end // 0x1000
 
-const wat-porth-stack sizeof(wasm4-cart) sizeof(porth-stack) - end
-const wat-return-stack wat-porth-stack sizeof(return-stack) - end
+const wat-porth-data-stack sizeof(wasm4-cart) sizeof(porth-stack) - end
 
+memory wat-porth-return-stack sizeof(int) end
 memory wat-global-mem sizeof(int) end
 memory skip-inline sizeof(bool) end
 
@@ -491,18 +490,15 @@ in
         1 +
       end drop
 
-      "\n(global $RETURN_STACK i32 (i32.const " bfd bputs wat-return-stack bfd bputu "))"  bfd bputs
-      "\n(global $DATA_STACK   i32 (i32.const " bfd bputs wat-porth-stack bfd bputu "))\n" bfd bputs
-
       0 while dup strlits-count @64 < do
         let i in
           i sizeof(Str) * strlits +ptr
           let str in
             str ?str-empty lnot if
-              "(global $str"     bfd bputs i bfd bputu
+              "\n(global $str"   bfd bputs i bfd bputu
               " i32 (i32.const " bfd bputs
               char-counter @int  wat-string-section + bfd bputu
-              "))\n"             bfd bputs
+              "))"               bfd bputs
               char-counter  str
               inc-by-char-count
             end
@@ -513,14 +509,18 @@ in
 
       wat-string-section
       char-counter @int
-      64 / 1 + 64 * + 
-      wat-global-mem !int
+      8 / 1 + 8 * + dup
+      wat-global-mem !int global-memory-capacity @int +
+      wat-porth-return-stack !int
 
-      global-memory-capacity @int wat-global-mem @int + wat-return-stack > if
+      wat-porth-return-stack @int wat-porth-data-stack > if
         "[ERROR] global memory size exceeds the limits\n" eputs
         "[INFO] use ./4orth summary to view more details\n" puts
         1 exit
       end
+
+      "\n(global $RETURN_STACK i32 (i32.const " bfd bputs wat-porth-return-stack @int bfd bputu "))"  bfd bputs
+      "\n(global $DATA_STACK   i32 (i32.const " bfd bputs wat-porth-data-stack bfd bputu "))\n" bfd bputs
 
       "\n(func $dup (local i32)\n"                          bfd bputs
       "  call $pop  local.tee 0\n"                          bfd bputs
@@ -574,10 +574,10 @@ in
       "(func $aloc_local (param i32) (local $offset i32)\n" bfd bputs
       "  global.get  $RETURN_STACK\n"                       bfd bputs
       "  global.get  $RETURN_STACK i32.load\n"              bfd bputs
-      "  local.get 0 i32.add \n"                            bfd bputs
-      "  local.tee   $offset i32.add\n"                     bfd bputs
+      "  local.get 0 i32.add\n"                             bfd bputs
+      "  local.set   $offset\n"                             bfd bputs
       "  i32.const 0 local.get 0   memory.fill\n"           bfd bputs
-      "  global.get  $RETURN_STACK local.get $offset \n"    bfd bputs
+      "  global.get  $RETURN_STACK local.get $offset\n"     bfd bputs
       "  i32.store)\n\n"                                    bfd bputs
       "(func $free_local (param i32)\n"                     bfd bputs
       "  global.get  $RETURN_STACK\n"                       bfd bputs
