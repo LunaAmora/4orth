@@ -516,7 +516,7 @@ in
       64 / 1 + 64 * + 
       wat-global-mem !int
 
-      global-memory-capacity @int wat-global-mem @int + wat-porth-stack > if
+      global-memory-capacity @int wat-global-mem @int + wat-return-stack > if
         "[ERROR] global memory size exceeds the limits\n" eputs
         "[INFO] use ./4orth summary to view more details\n" puts
         1 exit
@@ -752,6 +752,8 @@ proc main in
   // Default include paths
   "."     include-paths-add
   "./std" include-paths-add
+  "_4ORTH" getenv cstr-to-str append-std include-paths-add
+  "PORTH"  getenv cstr-to-str append-std include-paths-add
 
   memory args sizeof(ptr) end
   argv args !ptr
@@ -850,8 +852,6 @@ proc main in
     end
 
     input-file-path-cstr @ptr cstr-to-str remove-ext base-file-path !Str
-    "_4ORTH" getenv cstr-to-str append-std include-paths-add
-    "PORTH"  getenv cstr-to-str append-std include-paths-add
 
     input-file-path-cstr @ptr compile-program-into-ops
     unsafe @bool lnot if type-check-program end
