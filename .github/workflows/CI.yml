@@ -3,6 +3,9 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**/*.porth'
+      - '!example/Template/**'
   pull_request:
     branches: [ main ]
 
