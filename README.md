@@ -39,6 +39,8 @@ Or you can use the subcommands `-b` and `-r` to bundle and run after the compila
 $ ./4orth com -b -r game.porth
 ```
 
+Obs: Add `_4ORTH` (and `PORTH`, if bootstrapping) enviroment variable to automatically have the std libraries available in 4orth include path.
+
 ### Running options and subcommands
 
 ```console
