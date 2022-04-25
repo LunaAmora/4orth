@@ -2390,10 +2390,14 @@ in
   end
 end
 
-proc include-paths-add-env int ptr in
-  getenv-check if 
-    cstr-to-str append-std include-paths-add
-  else drop end
+proc include-paths-add-env bool int ptr in
+  getenv-check if
+    cstr-to-str append-std 
+    rot lnot if 
+      "[INFO] Includding " puts over over puts " path\n" puts
+    end
+    include-paths-add
+  else drop drop end
 end
 
 proc include-paths-resolve-file

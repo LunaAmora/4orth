@@ -752,8 +752,6 @@ proc main in
   // Default include paths
   "."     include-paths-add
   "./std" include-paths-add
-  "_4ORTH" include-paths-add-env
-  "PORTH"  include-paths-add-env
 
   memory args sizeof(ptr) end
   argv args !ptr
@@ -852,6 +850,8 @@ proc main in
     end
 
     input-file-path-cstr @ptr cstr-to-str remove-ext base-file-path !Str
+    silent @bool "_4ORTH" include-paths-add-env
+    silent @bool "PORTH"  include-paths-add-env
 
     input-file-path-cstr @ptr compile-program-into-ops
     unsafe @bool lnot if type-check-program end
