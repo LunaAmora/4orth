@@ -130,7 +130,7 @@ in
         else type OP_ELSE = if*
             " else"            bfd bputs
         else type OP_END_WHILE = if*
-            " br $"            bfd bputs operand 1 + bfd bputu
+            " br $while"       bfd bputs operand 1 + bfd bputu
             " end"             bfd bputs
             " end"             bfd bputs
         else type OP_END_IF = if*
@@ -141,12 +141,10 @@ in
 
             " end"             bfd bputs
         else type OP_WHILE = if*
-            " block $while"    bfd bputs 
-            " loop $"          bfd bputs operand bfd bputu
+            " loop $while"     bfd bputs operand bfd bputu
         else type OP_DO = if*
             " call $pop"       bfd bputs
-            " i32.eqz"         bfd bputs
-            " br_if $while"    bfd bputs
+            " if"              bfd bputs
         else type OP_PREP_PROC = if*
             op Op.token ptr+ Token.text ptr+ @Str proc-lookup-by-name dup Proc.name ptr+ 
             let prok name in
@@ -518,7 +516,7 @@ in
         1 exit
       end
 
-      "\n\n(global $RETURN_STACK_TOP (mut i32) (i32.const 0))" bfd bputs
+      "\n(global $RETURN_STACK_TOP (mut i32) (i32.const 0))" bfd bputs
       "\n(global $DATA_STACK_TOP (mut i32) (i32.const 0))" bfd bputs
       "\n(global $RETURN_STACK i32 (i32.const " bfd bputs wat-porth-return-stack @int bfd bputu "))"  bfd bputs
       "\n(global $DATA_STACK i32 (i32.const " bfd bputs wat-porth-data-stack bfd bputu "))\n\n" bfd bputs
