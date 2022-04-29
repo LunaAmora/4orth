@@ -64,21 +64,21 @@ SUBCOMMANDS:
 
 ### Status
 
-4orth is not feature complete with the current open version of Porth and Wasm-4 yet. The current set of features not supported consists of:
+4orth is not feature complete with the current open version of Porth. The current set of features not supported consists of:
 
-- Int64 (all integers are treated as Int32, if an overflow occurs on const evaluation, the .wat file will contain an error)
+- Int64 (all numbers are treated as unsigned int 32, if an overflow occurs on const evaluation, the .wat file will contain an error)
 - Negative numbers
-- Floats
 
 ### Changes
 
-4orth implements some features not available in Porth to facilitate Wasm-4 integration:
+4orth implements some temporary features not available in Porth to facilitate Wasm-4 integration:
 
 - Xor Intrinsic
-- Hexadecimal numbers (as `0x` format on numbers, and as `\\` plus 2 digits on strings)
 - Bit shift support in const evaluation
-- Null terminated string support in const evaluation
-- Baked in random number generator (will be removed once there is float and int64 support).
+- Null terminated string support in const evaluation (c style strings)
+- Hexadecimal numbers (as `0x` format on numbers, and as `\\` plus 2 digits on strings)
+
+- Baked in random number generator (will be removed once there is int64 support).
 ```porth
 inline proc rnd-coord -- int int in 20 rnd 20 rnd end
 ```
