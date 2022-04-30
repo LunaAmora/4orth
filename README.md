@@ -74,8 +74,8 @@ SUBCOMMANDS:
 4orth implements some temporary features not available in Porth to facilitate Wasm-4 integration:
 
 - Xor Intrinsic
-- Null terminated string support in const evaluation (evaluates to a ptr to the string)
 - Hexadecimal numbers (as `0x` format on numbers, and as `\\` plus 2 digits on strings)
+- Null terminated string support in const evaluation (evaluates to a pointer to the string)
 
 - Baked in pseudo random number generator (will be removed once there is int64 support).
 ```porth
@@ -83,7 +83,7 @@ proc rnd-coord -- int int in 20 rnd 20 rnd end
 ```
 This proc for example returns two ints between 0 and 20.
 
-- Import proc
+- Imports
 ```porth
 import proc trace ptr in end
 ```
@@ -94,8 +94,15 @@ This adds the ability to call the wasm-4 `trace` function via the defined proc c
 ```porth
 export main "start"
 export update "update"
-'''
+```
 
 This exports the necessary procs that Wasm4 needs to call when the complied wasm file is executed.
 
+# Others
+
 All available [functions](https://wasm4.org/docs/reference/functions), constants and the [memory map](https://wasm4.org/docs/reference/memory) from Wasm-4 are in the [wasm4.porth](./wasm4.porth) library.
+
+Huge thanks to [Tsoding](https://github.com/tsoding) for all the educational content and for (being in the process of) creating such a fun language to experiment with.\
+And Thanks [Aduros](https://github.com/aduros) for the fantastic fantasy console [Wasm4](https://wasm4.org/).
+
+The two projects just seemed so compatible to me that I had to try a way to play with both at the same time!
