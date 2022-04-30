@@ -3,6 +3,9 @@
 
 include "core.porth"
 
+export main "start"
+export update "update"
+
 // ┌───────────────────────────────────────────────────────────────────────────┐
 // │                                                                           │
 // │ Drawing Functions                                                         │
@@ -87,31 +90,31 @@ const $PROGRAM_END          reset cast(ptr) end // End of program memory
 const $SYSTEM_PRESERVE_FRAMEBUFFER 1 end
 const $SYSTEM_HIDE_GAMEPAD_OVERLAY 2 end
 
-const $BUTTON_1      1 0 shl end
-const $BUTTON_2      1 1 shl end // bits 2 and 3 are skipped
-const $BUTTON_LEFT   1 4 shl end
-const $BUTTON_RIGHT  1 5 shl end
-const $BUTTON_UP     1 6 shl end
-const $BUTTON_DOWN   1 7 shl end
+const $BUTTON_1      1   end
+const $BUTTON_2      2   end // bits 2 and 3 are skipped
+const $BUTTON_LEFT   16  end
+const $BUTTON_RIGHT  32  end
+const $BUTTON_UP     64  end
+const $BUTTON_DOWN   128 end
 
-const $MOUSE_LEFT    1 0 shl end
-const $MOUSE_RIGHT   1 1 shl end
-const $MOUSE_MIDDLE  1 2 shl end
+const $MOUSE_LEFT    1   end
+const $MOUSE_RIGHT   2   end
+const $MOUSE_MIDDLE  4   end
 
-const $BLIT_1BPP     0       end
-const $BLIT_2BPP     1 0 shl end
-const $BLIT_FLIP_X   1 1 shl end
-const $BLIT_FLIP_Y   1 2 shl end
-const $BLIT_ROTATE   1 3 shl end
+const $BLIT_1BPP     0   end
+const $BLIT_2BPP     1   end
+const $BLIT_FLIP_X   2   end
+const $BLIT_FLIP_Y   4   end
+const $BLIT_ROTATE   8   end
 
-const $TONE_PULSE1   0  end
-const $TONE_PULSE2   1  end
-const $TONE_TRIANGLE 2  end
-const $TONE_NOISE    3  end
-const $TONE_MODE1    0  end
-const $TONE_MODE2    4  end
-const $TONE_MODE3    8  end
-const $TONE_MODE4    12 end
+const $TONE_PULSE1   0   end
+const $TONE_PULSE2   1   end
+const $TONE_TRIANGLE 2   end
+const $TONE_NOISE    3   end
+const $TONE_MODE1    0   end
+const $TONE_MODE2    4   end
+const $TONE_MODE3    8   end
+const $TONE_MODE4    12  end
 
 // Baked in random procedure. Returns a value between 1 and the given input.
 proc rnd int -- int in end

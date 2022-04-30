@@ -163,12 +163,6 @@ in
                 ") $f"                bfd bputs ip bfd bputu 
                 ")\n(func $f"         bfd bputs ip bfd bputu
 
-                name @Str "main" streq if
-                  " (export \"start\")"  bfd bputs
-                else name @Str "update" streq if*
-                  " (export \"update\")" bfd bputs
-                end
-
                 " ;; proc " bfd bputs name @Str bfd bputs
 
                 operand 0 > if
@@ -422,6 +416,26 @@ in
   else drop drop end
 end
 
+proc generate-wat-exports
+  int // ip
+  ptr // bfd
+in
+  let ip bfd in
+    ip sizeof(export) * exports +ptr dup @Str
+    proc-lookup-by-name swap sizeof(Str) ptr+
+    let prok export in
+      prok NULL ptr!= if
+        "(export \"" bfd bputs
+        export @Str    bfd bputs
+        "\""         bfd bputs
+        " (func $f"  bfd bputs
+        prok Proc.addr ptr+ @int bfd bputu
+        "))\n"       bfd bputs
+      end
+    end 
+  end
+end
+
 proc inc-by-char-count ptr ptr in
   memory str sizeof(Str) end
   @Str str !Str
@@ -643,8 +657,13 @@ in
       proc-index @64 bfd bputu 
       " funcref)\n"  bfd bputs
 
+      0 while dup exports-count @64 < do
+        dup bfd generate-wat-exports
+        1 +
+      end drop
+
       strlits-count @64 0 > if
-        "\n(data (i32.const " bfd bputs wat-string-section bfd bputu ")\n" bfd bputs
+        "(data (i32.const " bfd bputs wat-string-section bfd bputu ")\n" bfd bputs
         
         0 while dup strlits-count @64 < do
           let i in

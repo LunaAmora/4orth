@@ -61,6 +61,7 @@ const KEYWORD_CALL_LIKE   1 offset end
 const KEYWORD_LET         1 offset end
 const KEYWORD_PEEK        1 offset end
 const KEYWORD_IMPORT      1 offset end
+const KEYWORD_EXPORT      1 offset end
 const COUNT_KEYWORDS         reset end
 
 proc keyword-by-name
@@ -71,7 +72,7 @@ in
   memory name sizeof(Str) end
   name !Str
   true
-  assert "Exhaustive keyword handling" COUNT_KEYWORDS 22 = end
+  assert "Exhaustive keyword handling" COUNT_KEYWORDS 23 = end
        name @Str "if"        streq if  KEYWORD_IF
   else name @Str "if*"       streq if* KEYWORD_IFSTAR
   else name @Str "else"      streq if* KEYWORD_ELSE
@@ -94,6 +95,7 @@ in
   else name @Str "let"       streq if* KEYWORD_LET
   else name @Str "peek"      streq if* KEYWORD_PEEK
   else name @Str "import"    streq if* KEYWORD_IMPORT
+  else name @Str "export"    streq if* KEYWORD_EXPORT
   else
     drop false 0
   end
@@ -106,7 +108,7 @@ proc keyword-name
   --
   int ptr
 in
-  assert "Exhaustive keyword handling" COUNT_KEYWORDS 22 = end
+  assert "Exhaustive keyword handling" COUNT_KEYWORDS 23 = end
        dup KEYWORD_IF          = if  "if"
   else dup KEYWORD_IFSTAR      = if* "if*"
   else dup KEYWORD_ELSE        = if* "else"
@@ -129,6 +131,7 @@ in
   else dup KEYWORD_LET         = if* "let"
   else dup KEYWORD_PEEK        = if* "peek"
   else dup KEYWORD_IMPORT      = if* "import"
+  else dup KEYWORD_EXPORT      = if* "export"
   else
     0 NULL
     here eputs ": unreachable\n" eputs
@@ -1798,22 +1801,6 @@ in
         else dup INTRINSIC_DROP = if*
           1 token const-expect-arity
           const-stack-pop drop drop
-        else dup INTRINSIC_SHL = if*
-          2 token const-expect-arity
-          // TODO: `shl` intrinsic ignores the types in compile time evaluation
-          const-stack-pop swap drop
-          const-stack-pop swap drop
-          swap
-          shl
-          DATATYPE_INT swap const-stack-push
-        else dup INTRINSIC_SHR = if*
-          2 token const-expect-arity
-          // TODO: `shr` intrinsic ignores the types in compile time evaluation
-          const-stack-pop swap drop
-          const-stack-pop swap drop
-          swap
-          shr
-          DATATYPE_INT swap const-stack-push
         else
           token Token.loc ptr+ eputloc ": ERROR: intrinsic `" eputs token Token.value ptr+ @Str eputs "` is not supported in compile time evaluation\n" eputs
           1 exit
@@ -1836,7 +1823,7 @@ in
       end
       drop // intrinsic
     else token Token.type ptr+ @64 TOKEN_KEYWORD = if*
-      assert "Exhaustive handling of keywords in eval-const-value" COUNT_KEYWORDS 22 = end
+      assert "Exhaustive handling of keywords in eval-const-value" COUNT_KEYWORDS 23 = end
       token Token.value ptr+ @64
         dup KEYWORD_END = if
           true done !64
@@ -2062,6 +2049,85 @@ in
   true inside-proc !bool
 
   prok proc-define
+end
+
+const EXPORT_CAP 1024 end
+const sizeof(export) sizeof(Str) 2 * end
+memory exports sizeof(export) EXPORT_CAP * end
+memory exports-count sizeof(int) end
+
+proc exports-add
+  int ptr
+  int ptr
+in
+  exports-count @int
+  let n s n1 s1 count in
+    count EXPORT_CAP >= if
+      here eputs ": Assertion Failed: exports capacity overflow\n" eputs
+      1 exit
+    end
+
+    n s
+    count sizeof(export) * exports +ptr
+    !Str
+    n1 s1
+    count sizeof(export) * exports +ptr sizeof(Str) ptr+
+    !Str
+
+    exports-count inc64
+  end
+end
+
+proc introduce-export
+  ptr // token
+  ptr // lexer
+in
+  memory lexer_ sizeof(ptr) end
+  lexer_ !ptr
+  memory token sizeof(Token) end
+  sizeof(Token) swap token memcpy drop
+
+  inside-proc @bool if
+    token Token.loc ptr+                                                             eputloc
+    ": ERROR: definition of exports inside of procedures is not allowed\n" eputs
+    procs-count @int 1 - sizeof(Proc) * procs +ptr Proc.loc ptr+                     eputloc
+    ": NOTE: the current procedure starts here\n"                                    eputs
+    1 exit
+  end
+
+  token lexer_ @ptr lexer-next-token lnot if
+    token Token.loc ptr+ eputloc
+    ": ERROR: expected export value but found nothing\n" eputs
+    1 exit
+  end
+
+  token Token.type ptr+ @64 TOKEN_WORD != if
+    token Token.loc ptr+ eputloc
+    ": ERROR: expected export value to be a word but found " eputs
+    token Token.type ptr+ @64 HUMAN_SINGULAR human-token-type eputs
+    " instead\n" eputs
+    1 exit
+  end
+
+  memory token2 sizeof(Token) end
+  
+  token2 lexer_ @ptr lexer-next-token lnot if
+    token2 Token.loc ptr+ eputloc
+    ": ERROR: expected export name but found nothing\n" eputs
+    1 exit
+  end
+
+  token2 Token.type ptr+ @int TOKEN_STR != if
+    token2 Token.loc ptr+ eputloc
+    ": ERROR: expected export name to be a string but found "   eputs
+    token2 Token.type ptr+ @int HUMAN_SINGULAR human-token-type eputs
+    "\n"                                                        eputs
+    1 exit
+  end
+
+  token Token.value ptr+ @Str
+  token2 Token.value ptr+ @Str
+  exports-add
 end
 
 proc introduce-import
@@ -2483,7 +2549,7 @@ in
             else type @int TOKEN_KEYWORD = if*
               value @int
               let keyword in
-                assert "Exhaustive handling of keywords in compile-file-into-ops" COUNT_KEYWORDS 22 = end
+                assert "Exhaustive handling of keywords in compile-file-into-ops" COUNT_KEYWORDS 23 = end
                 keyword KEYWORD_IF = if
                   ops-count @64 parse-block-stack-push
                   OP_IF 0 token push-op
@@ -2801,6 +2867,8 @@ in
                     1 exit
                   end
                   token lexer introduce-import
+                else keyword KEYWORD_EXPORT = if*
+                  token lexer introduce-export
                 else keyword KEYWORD_INLINE = if*
                   token lexer lexer-next-token lnot if
                     loc eputloc
