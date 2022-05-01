@@ -55,6 +55,7 @@ SUBCOMMANDS:
         -b               Bundles the program to a linux executable. (If with -r, executes the bundle)
         -opt             Optimize the program with wasm-opt
         -wat             Transforms the stripped program back from the final `.wasm` to `.wat`
+        -wasm            Target WASM instead of Wasm4 (doesn't support -b or -r)
         -wasi            Target WASI instead of Wasm4 (doesn't support -b or -r)
         -s               Silent mode. Don't print any info about compilation phases
         -o  <file>       File to write the result to 

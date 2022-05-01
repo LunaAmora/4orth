@@ -394,6 +394,7 @@ in
 end
 
 memory wasi sizeof(bool) end
+memory wasm sizeof(bool) end
 
 proc generate-wasm-imports
   int // ip
@@ -529,7 +530,7 @@ in
         1 +
       end drop
 
-      wasi @bool if
+      wasi @bool wasm @bool lor if
         "(memory 1)\n" bfd bputs
         "(export \"memory\" (memory 0))\n" bfd bputs
       else
@@ -781,6 +782,7 @@ in
     "        -b                Bundles the program to a linux executable. (If with -r, executes the bundle)\n" fd fputs
     "        -opt              Optimize the program with wasm-opt\n"                           fd fputs
     "        -wat              Transforms the stripped program back from the final `.wasm` to `.wat` \n"     fd fputs
+    "        -wasm             Target WASM instead of Wasm4 (doesn't support -b or -r)\n"      fd fputs
     "        -wasi             Target WASI instead of Wasm4 (doesn't support -b or -r)\n"      fd fputs
     "        -s                Silent mode. Don't print any info about compilation phases\n"   fd fputs
     "        -o  <file>        File to write the result to \n"                                 fd fputs
@@ -875,6 +877,9 @@ proc main in
       else args @@ptr "-wasi"c cstreq if*
         true wasi !bool
         true  // continue
+      else args @@ptr "-wasm"c cstreq if*
+        true wasm !bool
+        true  // continue
       else args @@ptr "-o"c cstreq if*
         true output !bool
         args sizeof(ptr) inc64-by
@@ -897,8 +902,8 @@ proc main in
       1 exit
     end
 
-    wasi @bool run @bool bundle @bool lor land if
-      "ERROR: Wasi compile option can't be used with bundle or run\n" eputs
+    wasi @bool wasm @bool lor run @bool bundle @bool lor land if
+      "ERROR: This compile option can't be used with bundle or run\n" eputs
       1 exit
     end
 
