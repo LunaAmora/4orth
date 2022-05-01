@@ -194,6 +194,16 @@ in
               else
                 operand bfd bputu
               end
+              prok Proc.imported ptr+ @bool if
+                prok Proc.outs ptr+
+                TypeStack.top ptr+ @ptr 
+                dup NULL ptr!= if
+                  while dup NULL ptr!= do
+                    " call $push" bfd bputs
+                    TypeFrame.prev ptr+ @ptr
+                  end drop
+                else drop end
+              end
             end
         else type OP_INLINED = if*
         else type OP_INTRINSIC = if*
@@ -382,6 +392,8 @@ in
   end
 end
 
+memory wasi sizeof(bool) end
+
 proc generate-wat-imports
   int // ip
   ptr // bfd
@@ -396,13 +408,29 @@ in
           1 exit
         end
         prok Proc.imported ptr+ @bool if
-          "(import \"env\" \"" bfd bputs
+          "(import \""         bfd bputs
+          wasi @bool if
+            "wasi_unstable"    bfd bputs
+          else
+            "env"              bfd bputs
+          end
+          "\" \""              bfd bputs
           name @Str            bfd bputs
           "\" (func $f"        bfd bputs ip bfd bputu
           prok Proc.ins ptr+
           TypeStack.top ptr+ @ptr
           dup NULL ptr!= if
             " (param"         bfd bputs
+            while dup NULL ptr!= do
+              " i32"          bfd bputs
+              TypeFrame.prev ptr+ @ptr
+            end drop
+            ")"               bfd bputs
+          else drop end
+          prok Proc.outs ptr+
+          TypeStack.top ptr+ @ptr
+          dup NULL ptr!= if
+            " (result"        bfd bputs
             while dup NULL ptr!= do
               " i32"          bfd bputs
               TypeFrame.prev ptr+ @ptr
@@ -493,13 +521,19 @@ in
         1 exit
       end
 
-      "(type $CallLike (func))\n"                bfd bputs
-      "(import \"env\" \"memory\" (memory 1))\n" bfd bputs
+      "(type $CallLike (func))\n\n"                bfd bputs
 
       0 while dup ops-count @64 < do
         dup bfd generate-wat-imports
         1 +
       end drop
+
+      wasi @bool if
+        "(memory 1)\n" bfd bputs
+        "(export \"memory\" (memory 0))\n" bfd bputs
+      else
+        "(import \"env\" \"memory\" (memory 1))\n" bfd bputs
+      end
 
       0 while dup strlits-count @64 < do
         let i in
@@ -613,13 +647,6 @@ in
         main-proc NULL ptr= if
           here eputs ": Assertion Failed: type checking phase did not check the existence of `main` procedure\n" eputs
           1 exit
-        end
-      end
-
-      "update" proc-lookup-by-name
-      let update-proc in
-        update-proc NULL ptr= if
-          "[INFO] Procedure: `update` is missing\n" puts
         end
       end
 
@@ -748,6 +775,7 @@ in
     "        -b                Bundles the program to a linux executable. (If with -r, executes the bundle)\n" fd fputs
     "        -opt              Optimize the program with wasm-opt\n"                           fd fputs
     "        -wat              Transforms the stripped program back from the final `.wasm` to `.wat` \n"     fd fputs
+    "        -wasi             Target WASI instead of Wasm4 (doesn't support -b or -r)\n"      fd fputs
     "        -s                Silent mode. Don't print any info about compilation phases\n"   fd fputs
     "        -o  <file>        File to write the result to \n"                                 fd fputs
     // "    dump <file>           Dump the ops of the program\n"                                  fd fputs
@@ -838,6 +866,9 @@ proc main in
       else args @@ptr "-wat"c cstreq if*
         true wasm2wat !bool
         true  // continue
+      else args @@ptr "-wasi"c cstreq if*
+        true wasi !bool
+        true  // continue
       else args @@ptr "-o"c cstreq if*
         true output !bool
         args sizeof(ptr) inc64-by
@@ -857,6 +888,11 @@ proc main in
     input-file-path-cstr @ptr NULL ptr= if
       program @ptr stderr usage
       "[ERROR] no input file is provided for the compilation.\n" eputs
+      1 exit
+    end
+
+    wasi @bool run @bool bundle @bool lor land if
+      "ERROR: Wasi compile option can't be used with bundle or run\n" eputs
       1 exit
     end
 

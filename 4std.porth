@@ -155,12 +155,51 @@ proc bputhexint int ptr in
   end
 end
 
+proc bputschar
+  int
+  ptr
+in
+  1
+  let s bfd n in
+    bfd Bfd.size ptr+
+    bfd Bfd.fd ptr+ @int
+    bfd Bfd.buff ptr+ @ptr
+    let psize fd buff in
+      psize @int n + BFD_CAP > if bfd bflush end
+      psize @int n + BFD_CAP > if
+      //   n s fd fputs
+      else
+        s buff psize @int ptr+ !8
+        psize inc64
+      end
+    end
+  end
+end
+
+proc unscape-char int ptr in
+  let n bfd in
+    n '\n' = if
+      "\\n" bfd bputs
+    else n '\"' = if*
+      "\\\""  bfd bputs
+    else
+      n bfd bputschar
+    end
+  end
+end
+
 proc bputwatstr
   int ptr
   ptr
 in
+  memory str sizeof(Str) end
   let bfd in
-    "\""   bfd bputs bfd bputs
+    str !Str
+    "\""   bfd bputs
+    while str @Str.count 0 > do
+      str @Str.data @8 bfd unscape-char
+      str str-chop-one-left
+    end
     "\""   bfd bputs
   end
 end

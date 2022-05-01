@@ -1,0 +1,20 @@
+include "core.porth"
+
+export main "_start"
+
+import proc fd_write ptr int ptr int -- ptr in end
+
+const usize sizeof(u32) end
+
+const ciovec.buff    usize offset end
+const ciovec.buf_len usize offset end
+const sizeof(ciovec) reset end
+
+proc puts int ptr in
+  memory ciovec sizeof(ciovec) end
+  memory written usize end
+  ciovec !ptr
+  ciovec usize ptr+ !int
+  written 1 ciovec 1 fd_write
+  drop
+end

@@ -2179,11 +2179,11 @@ in
       parse-block-stack-push
   OP_PREP_PROC 0 token push-op
 
-  lexer_ @ptr prok Proc.ins ptr+ parse-proc-contract-list if
-    token Token.loc ptr+ eputloc
-    ": ERROR: bikeshedder is not supported in imported procedures" eputs
-    1 exit
-  end
+  prok
+    lexer_ @ptr over Proc.ins ptr+ parse-proc-contract-list if
+      lexer_ @ptr over Proc.outs ptr+ parse-proc-contract-list drop
+    end
+  drop
 
   true inside-proc !bool
 
@@ -4364,6 +4364,7 @@ in
     end
     swap tmp-rewind
   do end
+  memory skip-check sizeof(bool) end
 
   while
     context TypeContext.stack ptr+ ?type-stack-empty
@@ -4371,11 +4372,15 @@ in
     lor
     lnot
   do
+    false skip-check !bool
     context TypeContext.stack ptr+ TypeStack.top ptr+ @ptr TypeFrame.type ptr+ @int
     context TypeContext.outs ptr+  TypeStack.top ptr+ @ptr TypeFrame.type ptr+ @int
     != if
-      context TypeContext.block-start-ip ptr+ @int sizeof(Op) * ops +ptr
-        dup Op.type ptr+ @int OP_WHILE = if
+      context TypeContext.block-start-ip ptr+ @int sizeof(Op) * ops +ptr dup
+        Op.token ptr+ Token.text ptr+ @Str
+        proc-lookup-by-name Proc.imported ptr+ @bool if
+        true skip-check !bool
+        else dup Op.type ptr+ @int OP_WHILE = if*
           dup Op.token ptr+ Token.loc ptr+ eputloc
           dup Op.type ptr+ @int
             ": ERROR: Unexpected data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations.\n" eputs
@@ -4392,21 +4397,23 @@ in
         end
       drop
 
-      context TypeContext.stack ptr+ TypeStack.top ptr+ @ptr
-        dup TypeFrame.loc ptr+                     eputloc
-        ": NOTE: Unexpected type `"                eputs
-        dup TypeFrame.type ptr+ @int datatype-name eputs
-        "`\n"                                      eputs
-      drop
+      skip-check @bool lnot if
+        context TypeContext.stack ptr+ TypeStack.top ptr+ @ptr
+          dup TypeFrame.loc ptr+                     eputloc
+          ": NOTE: Unexpected type `"                eputs
+          dup TypeFrame.type ptr+ @int datatype-name eputs
+          "`\n"                                      eputs
+        drop
 
-      context TypeContext.outs ptr+ TypeStack.top ptr+ @ptr
-        dup TypeFrame.loc ptr+                       eputloc
-        ": NOTE: Expected type `"                    eputs
-        dup TypeFrame.type ptr+ @int datatype-name   eputs
-        "`\n"                                        eputs
-      drop
+        context TypeContext.outs ptr+ TypeStack.top ptr+ @ptr
+          dup TypeFrame.loc ptr+                       eputloc
+          ": NOTE: Expected type `"                    eputs
+          dup TypeFrame.type ptr+ @int datatype-name   eputs
+          "`\n"                                        eputs
+        drop
 
-      1 exit
+        1 exit
+      end
     end
     context TypeContext.stack ptr+ type-stack-pop
     context TypeContext.outs ptr+  type-stack-pop
