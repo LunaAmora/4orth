@@ -54,7 +54,8 @@ SUBCOMMANDS:
         -r               Run the program after successful compilation
         -b               Bundles the program to a linux executable. (If with -r, executes the bundle)
         -opt             Optimize the program with wasm-opt
-        -wat             Transforms the stripped program back from the final `.wasm` to `.wat` 
+        -wat             Transforms the stripped program back from the final `.wasm` to `.wat`
+        -wasi            Target WASI instead of Wasm4 (doesn't support -b or -r)
         -s               Silent mode. Don't print any info about compilation phases
         -o  <file>       File to write the result to 
     png2src <file>       Uses w4 to convert a png file to Porth code and prints it
