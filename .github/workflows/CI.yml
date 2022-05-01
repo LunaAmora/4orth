@@ -65,9 +65,8 @@ jobs:
           name: 4orth
           path: |
             4orth
-            ./porth/std/core.porth
-            ./std/wasm4.porth
-            ./std/w4std.porth
+            porth/std/core.porth
+            std/
       
       - name: Test html Bundle 
         run:  ./w4 bundle ./example/tictactoe.wasm --title "Ultimate Tic Tac Toe" --html index.html

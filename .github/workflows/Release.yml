@@ -35,10 +35,8 @@ jobs:
         env:
           TAG: ${{ steps.get_version.outputs.tag }}
         run: |
-          mv 4orth porth/
-          mv std/wasm4.porth porth/std
-          mv std/w4std.porth porth/std
-          cd porth
+          mv porth/std/core.porth std/
+          rm -rf porth
           zip -r ../"4oth-${TAG}-linux".zip *
         
       - name: Publish release if tag is new  
