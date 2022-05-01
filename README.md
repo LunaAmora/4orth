@@ -1,5 +1,5 @@
 # 4orth 
-4orth is a [Porth](https://gitlab.com/tsoding/porth) compiler with a [WASM-4](https://wasm4.org/) target.
+4orth is a [Porth](https://gitlab.com/tsoding/porth) compiler with [WASM](https://webassembly.org/), [WASI](https://wasi.dev/) and [WASM-4](https://wasm4.org/) targets.
 
 ## Quick Start
 
@@ -97,7 +97,7 @@ export main "start"
 export update "update"
 ```
 
-This exports the necessary procs that Wasm4 needs to call when the complied wasm file is executed.
+This exports the desired procs to be called by Wasm4 or other Wasm runtimes.
 
 # Others
 
