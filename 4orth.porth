@@ -155,7 +155,7 @@ in
               end
 
               prok Proc.inlinable ptr+ @bool 
-              prok Proc.imported  ptr+ @bool lor 
+              prok Proc.imported  ptr+ @int 0 != lor 
               name @Str "rnd" streq lor if
                 true skip-inline !bool
               else
@@ -179,7 +179,7 @@ in
                 here eputs ": Assertion Failed: couldn't find proc name by token text" eputs
                 1 exit
               end
-              prok Proc.imported ptr+ @bool if
+              prok Proc.imported ptr+ @int 0 != if
                 prok Proc.ins ptr+
                 TypeStack.top ptr+ @ptr 
                 dup NULL ptr!= if
@@ -195,7 +195,7 @@ in
               else
                 operand bfd bputu
               end
-              prok Proc.imported ptr+ @bool if
+              prok Proc.imported ptr+ @int 0 != if
                 prok Proc.outs ptr+
                 TypeStack.top ptr+ @ptr 
                 dup NULL ptr!= if
@@ -393,7 +393,6 @@ in
   end
 end
 
-memory wasi sizeof(bool) end
 memory wasm sizeof(bool) end
 
 proc generate-wasm-imports
@@ -409,16 +408,13 @@ in
           here eputs ": Assertion Failed: couldn't find proc name by token text" eputs
           1 exit
         end
-        prok Proc.imported ptr+ @bool if
-          "(import \""         bfd bputs
-          wasi @bool if
-            "wasi_unstable"    bfd bputs
-          else
-            "env"              bfd bputs
-          end
-          "\" \""              bfd bputs
-          name @Str            bfd bputs
-          "\" (func $f"        bfd bputs ip bfd bputu
+        prok Proc.imported ptr+ @int 0 != if
+          "(import \""             bfd bputs
+          prok Proc.imported ptr+  @int 1 - sizeof(Str) * 
+          wasm-modules +ptr  @Str  bfd bputs
+          "\" \""                  bfd bputs
+          name @Str                bfd bputs
+          "\" (func $f"            bfd bputs ip bfd bputu
           prok Proc.ins ptr+
           TypeStack.top ptr+ @ptr
           dup NULL ptr!= if
@@ -530,12 +526,14 @@ in
         1 +
       end drop
 
-      wasi @bool wasm @bool lor if
+      wasm @bool if
         "(memory 1)\n" bfd bputs
         "(export \"memory\" (memory 0))\n" bfd bputs
       else
         6560 wasm-mem-start !int // 0x19a0 
-        "(import \"env\" \"memory\" (memory 1))\n" bfd bputs
+        "(import \""                  bfd bputs
+        wasm-modules @Str             bfd bputs
+        "\" \"memory\" (memory 1))\n" bfd bputs
       end
 
       0 while dup strlits-count @64 < do
@@ -783,7 +781,6 @@ in
     "        -opt              Optimize the program with wasm-opt\n"                           fd fputs
     "        -wat              Transforms the stripped program back from the final `.wasm` to `.wat` \n"     fd fputs
     "        -wasm             Target WASM instead of Wasm4 (doesn't support -b or -r)\n"      fd fputs
-    "        -wasi             Target WASI instead of Wasm4 (doesn't support -b or -r)\n"      fd fputs
     "        -s                Silent mode. Don't print any info about compilation phases\n"   fd fputs
     "        -o  <file>        File to write the result to \n"                                 fd fputs
     // "    dump <file>           Dump the ops of the program\n"                                  fd fputs
@@ -874,9 +871,6 @@ proc main in
       else args @@ptr "-wat"c cstreq if*
         true wasm2wat !bool
         true  // continue
-      else args @@ptr "-wasi"c cstreq if*
-        true wasi !bool
-        true  // continue
       else args @@ptr "-wasm"c cstreq if*
         true wasm !bool
         true  // continue
@@ -902,8 +896,8 @@ proc main in
       1 exit
     end
 
-    wasi @bool wasm @bool lor run @bool bundle @bool lor land if
-      "ERROR: This compile option can't be used with bundle or run\n" eputs
+    wasm @bool run @bool bundle @bool lor land if
+      "ERROR: Wasm compile option can't be used with bundle or run\n" eputs
       1 exit
     end
 

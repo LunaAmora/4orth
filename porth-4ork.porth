@@ -1293,7 +1293,7 @@ const Proc.loc  sizeof(Loc)       offset end
 const Proc.ins  sizeof(TypeStack) offset end
 const Proc.outs sizeof(TypeStack) offset end
 const Proc.inlinable sizeof(bool) offset end
-const Proc.imported sizeof(bool)  offset end
+const Proc.imported  sizeof(int)  offset end
 const Proc.size sizeof(int)       offset end
 const sizeof(Proc)                 reset end
 const PROCS_CAP 1024 end
@@ -2051,6 +2051,81 @@ in
   prok proc-define
 end
 
+const WASM_MODULES_CAP 8 end
+memory wasm-modules sizeof(Str) WASM_MODULES_CAP * end
+memory wasm-modules-count sizeof(int) end
+
+proc wasm-modules-add
+  int ptr
+in
+  wasm-modules-count @int
+  let n s count in
+    count WASM_MODULES_CAP >= if
+      here eputs ": Assertion Failed: wasm-modules capacity overflow\n" eputs
+      1 exit
+    end
+
+    n s
+    count sizeof(Str) * wasm-modules +ptr
+    !Str
+
+    wasm-modules-count inc64
+  end
+end
+
+proc introduce-wasm-module
+  ptr // token
+  ptr // lexer
+in
+  memory lexer_ sizeof(ptr) end
+  lexer_ !ptr
+  memory token sizeof(Token) end
+  sizeof(Token) swap token memcpy drop
+
+  inside-proc @bool if
+    token Token.loc ptr+                                                             eputloc
+    ": ERROR: definition of imports inside of procedures is not allowed\n" eputs
+    procs-count @int 1 - sizeof(Proc) * procs +ptr Proc.loc ptr+                     eputloc
+    ": NOTE: the current procedure starts here\n"                                    eputs
+    1 exit
+  end
+
+  token Token.type ptr+ @64 TOKEN_WORD != if
+    token Token.loc ptr+ eputloc
+    ": ERROR: expected import type to be a word or 'proc' but found " eputs
+    token Token.type ptr+ @64 HUMAN_SINGULAR human-token-type eputs
+    " instead\n" eputs
+    1 exit
+  end
+
+  token Token.value ptr+ @Str "module" streq lnot if
+    token Token.loc ptr+ eputloc
+    ": ERROR: unknown import type found: " eputs
+    token Token.value ptr+ @Str eputs
+    "\n" eputs
+    1 exit
+  end
+
+  memory token2 sizeof(Token) end
+  
+  token2 lexer_ @ptr lexer-next-token lnot if
+    token2 Token.loc ptr+ eputloc
+    ": ERROR: expected import module name but found nothing\n" eputs
+    1 exit
+  end
+
+  token2 Token.type ptr+ @int TOKEN_STR != if
+    token2 Token.loc ptr+ eputloc
+    ": ERROR: expected import module name to be a string but found "   eputs
+    token2 Token.type ptr+ @int HUMAN_SINGULAR human-token-type eputs
+    "\n"                                                        eputs
+    1 exit
+  end
+
+  token2 Token.value ptr+ @Str
+  wasm-modules-add
+end
+
 const EXPORT_CAP 1024 end
 const sizeof(export) sizeof(Str) 2 * end
 memory exports sizeof(export) EXPORT_CAP * end
@@ -2150,7 +2225,11 @@ in
 
   sizeof(Proc) 0 prok memset drop
 
-  true prok Proc.imported ptr+ !bool
+  wasm-modules-count @int 0 = if
+    "env" wasm-modules-add
+  end
+
+  wasm-modules-count @int prok Proc.imported ptr+ !int
 
   token lexer_ @ptr lexer-next-token lnot if
     token Token.loc ptr+ eputloc
@@ -2526,7 +2605,7 @@ in
           let type loc value in
           
             inside-proc @bool if
-              current-proc Proc.imported ptr+ @bool if
+              current-proc Proc.imported ptr+ @int 0 != if
                 type  @int TOKEN_KEYWORD = 
                 value @int KEYWORD_END   = land lnot if
                   loc eputloc
@@ -2857,16 +2936,20 @@ in
                     1 exit
                   end
 
+                  type @int TOKEN_WORD = if
+                    token lexer introduce-wasm-module
+                  else
                   type  @int TOKEN_KEYWORD =
                   value @int KEYWORD_PROC  =
-                  land lnot if
+                  land lnot if*
                     loc                                                         eputloc
                     ": ERROR: Expected keyword `proc` after `import` but got `" eputs
                     token Token.text ptr+ @Str                                  eputs
                     "`\n"                                                       eputs
                     1 exit
+                  else 
+                    token lexer introduce-import
                   end
-                  token lexer introduce-import
                 else keyword KEYWORD_EXPORT = if*
                   token lexer introduce-export
                 else keyword KEYWORD_INLINE = if*
@@ -4376,7 +4459,7 @@ in
     != if context TypeContext.block-start-ip ptr+ @int sizeof(Op) * ops +ptr
       let op in
         op Op.token ptr+ Token.text ptr+ @Str
-        proc-lookup-by-name Proc.imported ptr+ @bool lnot if
+        proc-lookup-by-name Proc.imported ptr+ @int 0 != lnot if
           op Op.type ptr+ @int OP_WHILE = if
             op Op.token ptr+ Token.loc ptr+ eputloc
             op Op.type ptr+ @int
@@ -4421,7 +4504,7 @@ in
   let stack outs op in 
     stack outs != if
       op Op.token ptr+ Token.text ptr+ @Str
-      proc-lookup-by-name Proc.imported ptr+ @bool if
+      proc-lookup-by-name Proc.imported ptr+ @int 0 != if
       else stack outs > if*
           op Op.type ptr+ @int OP_WHILE = if
             op Op.token ptr+ Token.loc ptr+ eputloc

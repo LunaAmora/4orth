@@ -2,6 +2,7 @@ include "core.porth"
 
 export main "_start"
 
+import module "wasi_unstable"
 import proc fd_write ptr int ptr int -- ptr in end
 
 const usize sizeof(u32) end
