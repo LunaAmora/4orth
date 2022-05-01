@@ -1,0 +1,5 @@
+include "wasi.porth"
+
+proc main in
+    "Hello World!\n" puts
+end

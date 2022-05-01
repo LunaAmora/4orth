@@ -83,7 +83,7 @@ const $MOUSE_BUTTONS 1     offset cast(ptr) end
 const $SYSTEM_FLAGS  1     offset cast(ptr) end
 const $RESERVED      128   offset cast(ptr) end // Reserved bytes for future use
 const $FRAMEBUFFER   6400  offset cast(ptr) end
-const $PORTH_MEM     54879 offset cast(ptr) end // Start of Porth global mem and return stack
+const $PORTH_MEM     54880 offset cast(ptr) end // Start of Porth global mem and return stack
 const $PORTH_STACK   4096  offset cast(ptr) end // Reserved memory for Porth data stack
 const $PROGRAM_END          reset cast(ptr) end // End of program memory
 

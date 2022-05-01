@@ -22,14 +22,15 @@ proc generate-op-comment ptr ptr in
   end
 end
 
-const wat-string-section  6560    end // 0x19a0
-const sizeof(wasm4-cart)  65535   end // 0xffff
+const sizeof(wasm-mem)    65536   end // 0x10000
 const sizeof(porth-stack) 64 64 * end // 0x1000
 
-const wat-porth-data-stack sizeof(wasm4-cart) sizeof(porth-stack) - end
+const wasm-data-stack sizeof(wasm-mem) sizeof(porth-stack) - end
 
-memory wat-porth-return-stack sizeof(int) end
-memory wat-global-mem sizeof(int) end
+memory wasm-mem-start sizeof(int) end
+memory wasm-global-mem sizeof(int) end
+memory wasm-return-stack sizeof(int) end
+
 memory skip-inline sizeof(bool) end
 
 memory proc-layers sizeof(int) OPS_CAP * end
@@ -109,7 +110,7 @@ in
             " i32.const "                     bfd bputs operand 8 / 1 + 4 * bfd bputu
             " i32.sub call $push"             bfd bputs
         else type OP_PUSH_GLOBAL_MEM = if*
-            " i32.const "      bfd bputs operand wat-global-mem @int + bfd bputu
+            " i32.const "      bfd bputs operand wasm-global-mem @int + bfd bputu
             " call $push"      bfd bputs
         else type OP_PUSH_STR = if*
             " i32.const "      bfd bputs op Op.token ptr+ Token.value ptr+ @Str drop bfd bputu
@@ -394,7 +395,7 @@ end
 
 memory wasi sizeof(bool) end
 
-proc generate-wat-imports
+proc generate-wasm-imports
   int // ip
   ptr // bfd
 in
@@ -444,7 +445,7 @@ in
   else drop drop end
 end
 
-proc generate-wat-exports
+proc generate-wasm-exports
   int // ip
   ptr // bfd
 in
@@ -524,7 +525,7 @@ in
       "(type $CallLike (func))\n\n"                bfd bputs
 
       0 while dup ops-count @64 < do
-        dup bfd generate-wat-imports
+        dup bfd generate-wasm-imports
         1 +
       end drop
 
@@ -532,6 +533,7 @@ in
         "(memory 1)\n" bfd bputs
         "(export \"memory\" (memory 0))\n" bfd bputs
       else
+        6560 wasm-mem-start !int // 0x19a0 
         "(import \"env\" \"memory\" (memory 1))\n" bfd bputs
       end
 
@@ -542,7 +544,7 @@ in
             str ?str-empty lnot if
               "\n(global $str"   bfd bputs i bfd bputu
               " i32 (i32.const " bfd bputs
-              char-counter @int  wat-string-section + bfd bputu
+              char-counter @int  wasm-mem-start @int + bfd bputu
               "))"               bfd bputs
               char-counter  str
               inc-by-char-count
@@ -552,22 +554,23 @@ in
         end
       end drop
 
-      wat-string-section
+      wasm-mem-start @int
       char-counter @int
       8 / 1 + 8 * + dup
-      wat-global-mem !int global-memory-capacity @int +
-      wat-porth-return-stack !int
+      wasm-global-mem !int 
+      global-memory-capacity @int +
+      wasm-return-stack !int
 
-      wat-porth-return-stack @int wat-porth-data-stack > if
-        "[ERROR] global memory size exceeds the limits\n" eputs
+      wasm-return-stack @int wasm-data-stack > if
+        "[ERROR] Global memory size exceeds the limits\n" eputs
         "[INFO] use ./4orth summary to view more details\n" puts
         1 exit
       end
 
       "\n(global $RETURN_STACK_TOP (mut i32) (i32.const 0))" bfd bputs
       "\n(global $DATA_STACK_TOP (mut i32) (i32.const 0))" bfd bputs
-      "\n(global $RETURN_STACK i32 (i32.const " bfd bputs wat-porth-return-stack @int bfd bputu "))"  bfd bputs
-      "\n(global $DATA_STACK i32 (i32.const " bfd bputs wat-porth-data-stack bfd bputu "))\n\n" bfd bputs
+      "\n(global $RETURN_STACK i32 (i32.const " bfd bputs wasm-return-stack @int bfd bputu "))"  bfd bputs
+      "\n(global $DATA_STACK i32 (i32.const " bfd bputs wasm-data-stack bfd bputu "))\n\n" bfd bputs
 
       "(func $dup (local i32)\n"             bfd bputs
       "  call $pop  local.tee 0\n"           bfd bputs
@@ -619,9 +622,12 @@ in
       "  global.get $RETURN_STACK\n"         bfd bputs
       "  global.get $RETURN_STACK_TOP\n"     bfd bputs
       "  i32.add)\n\n"                       bfd bputs
-      "(func $aloc_local (param i32)\n"      bfd bputs
-      "  global.get  $RETURN_STACK_TOP\n"    bfd bputs
-      "  local.get 0 i32.add\n"              bfd bputs
+      "(func $aloc_local (param i32) (local i32)\n" bfd bputs
+      "  global.get  $RETURN_STACK_TOP\n"           bfd bputs
+      "  local.get 0 i32.add local.tee 1\n"         bfd bputs
+      "  global.get  $RETURN_STACK i32.add\n"       bfd bputs
+      "  global.get  $DATA_STACK   i32.ge_u \n"     bfd bputs
+      "  if unreachable end local.get 1\n"          bfd bputs
       "  global.set  $RETURN_STACK_TOP)\n\n" bfd bputs
       "(func $free_local (param i32)\n"      bfd bputs
       "  global.get  $RETURN_STACK_TOP\n"    bfd bputs
@@ -685,12 +691,12 @@ in
       " funcref)\n"  bfd bputs
 
       0 while dup exports-count @64 < do
-        dup bfd generate-wat-exports
+        dup bfd generate-wasm-exports
         1 +
       end drop
 
       strlits-count @64 0 > if
-        "(data (i32.const " bfd bputs wat-string-section bfd bputu ")\n" bfd bputs
+        "(data (i32.const " bfd bputs wasm-mem-start @int bfd bputu ")\n" bfd bputs
         
         0 while dup strlits-count @64 < do
           let i in
