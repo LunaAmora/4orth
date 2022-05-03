@@ -10,7 +10,6 @@ You can download the latest [release](https://github.com/FrankWPA/4orth/releases
 Since Porth is self-hosted you need to bootstrap it first. Follow [Porth](https://gitlab.com/tsoding/porth) bootstrapping instructions on how to do that.
 
 Secondly you will need to install:
-- [WASM-4](https://wasm4.org/)
 - [WABT](https://github.com/WebAssembly/wabt)
 - [Binaryen](https://github.com/WebAssembly/binaryen) (optional, for optimized .wasm files)
 
@@ -18,22 +17,25 @@ Secondly you will need to install:
 $ ./porth com 4orth.porth
 ```
 
+Then, you are ready to compile and run your Porth programs using the runtime of your choice:
+- [WASM-4](https://wasm4.org/)
+- [WASMTIME](https://wasmtime.dev/)
+- [WASMER](https://wasmer.io/)
+- Or load the `.wasm` file yourself with [Javascript](https://developer.mozilla.org/en-US/docs/WebAssembly/Loading_and_running).
+
 ### Compilation
 
 Compilation generates [WAT](https://developer.mozilla.org/en-US/docs/WebAssembly/Understanding_the_text_format) and converts it to a [WebAssembly Binary Format](https://webassembly.github.io/spec/core/binary/index.html) .wasm file with [WABT](https://developer.mozilla.org/en-US/docs/WebAssembly/Text_format_to_wasm). So make sure you have it available in your `$PATH`.
 
 ```console
-$ ./4orth com game.porth
-...
-... compilation logs ...
-...
-$ w4 run game.wasm
+$ 4orth com main.porth
+$ w4 run main.wasm
         <or>
-$ w4 bundle --linux game game.wasm
-$ ./game
+$ 4orth com -wasm main.porth
+$ wasmtime main.wasm
 ```
 
-Or you can use the subcommands `-b` and `-r` to bundle and run after the compilation. (As porth only supports Linux, `-b` creates a Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
+On Wasm4, you can use the subcommands `-b` and `-r` to bundle and run after the compilation. (As porth only supports Linux, `-b` creates a Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
 
 ```console
 $ ./4orth com -b -r game.porth
