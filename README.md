@@ -25,23 +25,23 @@ Then, you are ready to compile and run your Porth programs using the runtime of 
 
 ### Compilation
 
-Compilation generates [WAT](https://developer.mozilla.org/en-US/docs/WebAssembly/Understanding_the_text_format) and converts it to a [WebAssembly Binary Format](https://webassembly.github.io/spec/core/binary/index.html) .wasm file with [WABT](https://developer.mozilla.org/en-US/docs/WebAssembly/Text_format_to_wasm). So make sure you have it available in your `$PATH`.
+Compilation generates [WAT](https://developer.mozilla.org/en-US/docs/WebAssembly/Understanding_the_text_format) and converts it to a [WebAssembly Binary Format](https://webassembly.github.io/spec/core/binary/index.html) `.wasm` file with [WABT](https://developer.mozilla.org/en-US/docs/WebAssembly/Text_format_to_wasm). So make sure you have it available in your `$PATH`.
 
 ```console
-$ 4orth com main.porth
+$ ./4orth com main.porth
 $ w4 run main.wasm
         <or>
-$ 4orth com -wasm main.porth
+$ ./4orth com -wasm main.porth
 $ wasmtime main.wasm
 ```
 
-On Wasm4, you can use the subcommands `-b` and `-r` to bundle and run after the compilation. (As porth only supports Linux, `-b` creates a Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
+With Wasm4, you can use the subcommands `-b` and `-r` to bundle and run after the compilation. (As porth only supports Linux, `-b` creates a Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
 
 ```console
-$ ./4orth com -b -r game.porth
+$ ./4orth com -b -r main.porth
 ```
 
-Obs: Add `_4ORTH` (and `PORTH`, if bootstrapping) enviroment variable to automatically have the std libraries available in 4orth include path.
+Tip: Add `_4ORTH` (and `PORTH`, if bootstrapping) environment variable to automatically have the std libraries available in 4orth include path.
 
 ### Running options and subcommands
 
@@ -69,12 +69,12 @@ SUBCOMMANDS:
 
 4orth is not feature complete with the current open version of Porth. The current set of features not supported consists of:
 
-- Int64 (all numbers are treated as unsigned int 32, if an overflow occurs on const evaluation, the .wat file will contain an error)
+- Int64 (all numbers are treated as unsigned int 32, if an overflow/underflow occurs on const evaluation, the .wat file will contain an error)
 - Negative numbers
 
 ### Changes
 
-4orth implements some temporary features not available in Porth to facilitate Wasm-4 integration:
+4orth implements some temporary features not available in Porth to facilitate Wasm integration:
 
 - Xor Intrinsic
 - Hexadecimal numbers (as `0x` format on numbers, and as `\\` plus 2 digits on strings)
@@ -103,7 +103,9 @@ This exports the desired procs to be called by Wasm4 or other Wasm runtimes.
 
 # Others
 
-All available [functions](https://wasm4.org/docs/reference/functions), constants and the [memory map](https://wasm4.org/docs/reference/memory) from Wasm-4 are in the [wasm4.porth](./wasm4.porth) library.
+All available [functions](https://wasm4.org/docs/reference/functions), constants and the [memory map](https://wasm4.org/docs/reference/memory) from Wasm-4 are in the [wasm4.porth](./std/wasm4.porth) library.
+
+The [wasi.porth](./std/wasi.porth) library contains a minimal WASI setup and a imported proc that prints to stdout.
 
 Huge thanks to [Tsoding](https://github.com/tsoding) for all the educational content and for (being in the process of) creating such a fun language to experiment with.\
 And Thanks [Aduros](https://github.com/aduros) for the fantastic fantasy console [Wasm4](https://wasm4.org/).
