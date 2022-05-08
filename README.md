@@ -35,7 +35,7 @@ $ ./4orth com -wasm main.porth
 $ wasmtime main.wasm
 ```
 
-With Wasm4, you can use the subcommands `-b` and `-r` to bundle and run after the compilation. (As porth only supports Linux, `-b` creates a Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
+With Wasm-4, you can use the subcommands `-b` and `-r` to bundle and run after the compilation. (As porth only supports Linux, `-b` creates a Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
 
 ```console
 $ ./4orth com -b -r main.porth
@@ -57,7 +57,7 @@ SUBCOMMANDS:
         -b               Bundles the program to a linux executable. (If with -r, executes the bundle)
         -opt             Optimize the program with wasm-opt
         -wat             Transforms the stripped program back from the final `.wasm` to `.wat`
-        -wasm            Target WASM instead of Wasm4 (doesn't support -b or -r)
+        -wasm            Target WASM instead of Wasm-4 (doesn't support -b or -r)
         -s               Silent mode. Don't print any info about compilation phases
         -o  <file>       File to write the result to 
     png2src <file>       Uses w4 to convert a png file to Porth code and prints it
@@ -90,7 +90,7 @@ This proc for example returns two ints between 0 and 20.
 ```porth
 import proc trace ptr in end
 ```
-This adds the ability to call the wasm-4 `trace` function via the defined proc contract. Imported procs must have an empty body and no return type. 
+This adds the ability to call the Wasm-4 `trace` function via the defined proc contract. Imported procs must have an empty body and no return type. 
 (Porth's `print` intrinsic calls this imported proc, you can use either of them to log to the console)
 
 - Exports
@@ -99,7 +99,7 @@ export main "start"
 export update "update"
 ```
 
-This exports the desired procs to be called by Wasm4 or other Wasm runtimes.
+This exports the desired procs to be called by Wasm-4 or other Wasm runtimes.
 
 # Others
 
@@ -108,6 +108,6 @@ All available [functions](https://wasm4.org/docs/reference/functions), constants
 The [wasi.porth](./std/wasi.porth) library contains a minimal WASI setup and a imported proc that prints to stdout.
 
 Huge thanks to [Tsoding](https://github.com/tsoding) for all the educational content and for (being in the process of) creating such a fun language to experiment with.\
-And Thanks [Aduros](https://github.com/aduros) for the fantastic fantasy console [Wasm4](https://wasm4.org/).
+And Thanks [Aduros](https://github.com/aduros) for the fantastic fantasy console [Wasm-4](https://wasm4.org/).
 
 The two projects just seemed so compatible to me that I had to try a way to play with both at the same time!
