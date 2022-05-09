@@ -117,13 +117,13 @@ proc check-keys in
     keys prev-state @8 xor keys and
     keys prev-state !8
     peek pressed in 0 != if
-      pressed $BUTTON_LEFT  and 0 != if  2 0 
+      pressed $BUTTON_LEFT  and 0 != if -1  0 
       else
-      pressed $BUTTON_RIGHT and 0 != if* 1 0 
+      pressed $BUTTON_RIGHT and 0 != if* 1  0 
       else
-      pressed $BUTTON_DOWN  and 0 != if* 0 1 
+      pressed $BUTTON_DOWN  and 0 != if* 0  1 
       else
-      pressed $BUTTON_UP    and 0 != if* 0 2
+      pressed $BUTTON_UP    and 0 != if* 0 -1
       else 0 0 end input-dir
     end end
   end
@@ -131,13 +131,13 @@ end
 
 // Return the wrapped snake position around the screen given its position and direction
 proc clamp-wrap int int -- int in
-  1 = let pos isPositive in
-    sizeof(grid) 1 - 0       //screen limits
-    isPositive if swap end   //check based on direction
-    pos = lnot if drop       //if not at the limits, just increment/decrement
-      pos 1 isPositive
-      if + else - end 
-    end
+  + sizeof(grid) 1 - 
+  let next border in
+    next 0 < if 
+      border
+    else next border > if* 
+      0
+    else next end
   end
 end
 

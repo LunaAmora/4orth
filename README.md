@@ -67,10 +67,7 @@ SUBCOMMANDS:
 
 ### Status
 
-4orth is not feature complete with the current open version of Porth. The current set of features not supported consists of:
-
-- Int64 (all numbers are treated as unsigned int 32, if an overflow/underflow occurs on const evaluation, the .wat file will contain an error)
-- Negative numbers
+4orth currently only supports 32 bit integers.
 
 ### Changes
 
@@ -80,7 +77,7 @@ SUBCOMMANDS:
 - Hexadecimal numbers (as `0x` format on numbers, and as `\\` plus 2 digits on strings)
 - Null terminated string support in const evaluation (evaluates to a pointer to the string)
 
-- Baked in pseudo random number generator (will be removed once there is int64 support).
+- Baked in pseudo random number generator (will be removed on the future).
 ```porth
 proc rnd-coord -- int int in 20 rnd 20 rnd end
 ```

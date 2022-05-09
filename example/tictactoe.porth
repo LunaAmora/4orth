@@ -164,13 +164,13 @@ proc place-and-update in
 end
 
 proc clamp-wrap int int int -- int in
-  1 = let pos gridSize isPositive in
-    gridSize 1 - 0
-    isPositive if swap end
-    pos = lnot if drop
-      pos 1 isPositive 
-      if + else - end 
-    end
+  rot + swap 1 - 
+  let next border in
+    next 0 < if 
+      border
+    else next border > if* 
+      0
+    else next end
   end
 end
 
@@ -205,10 +205,10 @@ proc check-keys in
     pressed $BUTTON_1 and cast(bool)
     pressed $BUTTON_2 and cast(bool) lor if
       place-and-update
-    end  pressed $BUTTON_LEFT  and cast(bool) if  2 0 
-    else pressed $BUTTON_RIGHT and cast(bool) if* 1 0 
-    else pressed $BUTTON_DOWN  and cast(bool) if* 0 1 
-    else pressed $BUTTON_UP    and cast(bool) if* 0 2
+    end  pressed $BUTTON_LEFT  and cast(bool) if -1  0 
+    else pressed $BUTTON_RIGHT and cast(bool) if* 1  0 
+    else pressed $BUTTON_DOWN  and cast(bool) if* 0  1 
+    else pressed $BUTTON_UP    and cast(bool) if* 0 -1
     else 0 0 end
     input-dir
   end end

@@ -67,7 +67,8 @@ in
             end
             ")" bfd bputs
         else type OP_PUSH_INT = if*
-            " i32.const "   bfd bputs operand bfd bputu
+            memory int-value sizeof(int) end operand int-value !int
+            " i32.const "   bfd bputs int-value @32 bfd bputu
             " call $push"   bfd bputs
         else type OP_PUSH_BOOL = if*
             " i32.const "   bfd bputs operand bfd bputu
@@ -234,17 +235,17 @@ in
                 " call $divmod"      bfd bputs
             else operand INTRINSIC_MAX = if*
                 " call $pop"         bfd bputs
-                " f32.convert_i32_u" bfd bputs
+                " f32.convert_i32_s" bfd bputs
                 " call $pop"         bfd bputs
-                " f32.convert_i32_u" bfd bputs
+                " f32.convert_i32_s" bfd bputs
                 " f32.max "          bfd bputs
-                " i32.trunc_f32_u"   bfd bputs
+                " i32.trunc_f32_s"   bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_SHR = if*
                 " call $swap"        bfd bputs
                 " call $pop"         bfd bputs
                 " call $pop"         bfd bputs
-                " i32.shr_u"         bfd bputs
+                " i32.shr_s"         bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_SHL = if*
                 " call $swap"        bfd bputs
@@ -269,13 +270,9 @@ in
                 " call $push"        bfd bputs
             else operand INTRINSIC_NOT = if*
                 " call $pop"         bfd bputs
-                " if"                bfd bputs
-                " i32.const 0"       bfd bputs
+                " i32.const -1"      bfd bputs
+                " i32.xor"           bfd bputs
                 " call $push"        bfd bputs
-                " else"              bfd bputs
-                " i32.const 1"       bfd bputs
-                " call $push"        bfd bputs
-                " end\n"             bfd bputs
             else operand INTRINSIC_PRINT = if*
                 " call $pop"         bfd bputs
                 " call $f"           bfd bputs
@@ -290,25 +287,25 @@ in
                 " call $swap"        bfd bputs
                 " call $pop"         bfd bputs
                 " call $pop"         bfd bputs
-                " i32.gt_u"          bfd bputs
+                " i32.gt_s"          bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_LT = if*
                 " call $swap"        bfd bputs
                 " call $pop"         bfd bputs
                 " call $pop"         bfd bputs
-                " i32.lt_u"          bfd bputs
+                " i32.lt_s"          bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_GE = if*
                 " call $swap"        bfd bputs
                 " call $pop"         bfd bputs
                 " call $pop"         bfd bputs
-                " i32.ge_u"          bfd bputs
+                " i32.ge_s"          bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_LE = if*
                 " call $swap"        bfd bputs
                 " call $pop"         bfd bputs
                 " call $pop"         bfd bputs
-                " i32.le_u"          bfd bputs
+                " i32.le_s"          bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_NE = if*
                 " call $pop"         bfd bputs
@@ -327,7 +324,7 @@ in
                 " call $rot"         bfd bputs
             else operand INTRINSIC_LOAD8 = if*
                 " call $pop"         bfd bputs
-                " i32.load8_u"       bfd bputs
+                " i32.load8_s"       bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_STORE8 = if*
                 " call $pop"         bfd bputs
@@ -335,7 +332,7 @@ in
                 " i32.store8"        bfd bputs
             else operand INTRINSIC_LOAD16 = if*
                 " call $pop"         bfd bputs
-                " i32.load16_u"      bfd bputs
+                " i32.load16_s"      bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_STORE16 = if*
                 " call $pop"         bfd bputs
@@ -350,13 +347,11 @@ in
                 " call $pop"         bfd bputs
                 " i32.store"         bfd bputs
             else operand INTRINSIC_LOAD64 = if*
-                " call $pop"         bfd bputs
-                " i32.load"          bfd bputs
-                " call $push"        bfd bputs
+              here eputs ": 4orth does not support u64.\n" eputs
+              1 exit
             else operand INTRINSIC_STORE64 = if*
-                " call $pop"         bfd bputs
-                " call $pop"         bfd bputs
-                " i32.store"         bfd bputs
+              here eputs ": 4orth does not support u64.\n" eputs
+              1 exit
             else operand INTRINSIC_ARGC = if*
             else operand INTRINSIC_ARGV = if*
             else operand INTRINSIC_ENVP = if*
@@ -596,9 +591,9 @@ in
       "(func $divmod (local i32 i32)\n"      bfd bputs
       "  call $pop   local.set 0\n"          bfd bputs
       "  call $pop   local.tee 1\n"          bfd bputs
-      "  local.get 0 i32.rem_u\n"            bfd bputs
+      "  local.get 0 i32.rem_s\n"            bfd bputs
       "  local.get 1 local.get 0\n"          bfd bputs
-      "  i32.div_u   call $push\n"           bfd bputs
+      "  i32.div_s   call $push\n"           bfd bputs
       "  call $push)\n\n"                    bfd bputs
       "(func $push (param i32)\n"            bfd bputs
       "  global.get  $DATA_STACK_TOP\n"      bfd bputs
