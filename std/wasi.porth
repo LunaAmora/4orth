@@ -1,21 +1,19 @@
-include "core.porth"
+include "wasm-core.porth"
 
 export main "_start"
 
 import module "wasi_unstable"
 import proc fd_write ptr int ptr int -- ptr in end
 
-const usize sizeof(u32) end
-
-const ciovec.buff    usize offset end
-const ciovec.buf_len usize offset end
+const ciovec.buff    sizeof(u32) offset end
+const ciovec.buf_len sizeof(u32) offset end
 const sizeof(ciovec) reset end
 
 proc puts int ptr in
   memory ciovec sizeof(ciovec) end
-  memory written usize end
+  memory written sizeof(u32) end
   ciovec !ptr
-  ciovec usize ptr+ !int
+  ciovec sizeof(u32) ptr+ !int
   written 1 ciovec 1 fd_write
   drop
 end

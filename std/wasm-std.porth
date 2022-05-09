@@ -1,4 +1,4 @@
-include "wasm4.porth"
+include "wasm-core.porth"
 
 proc cstrlen ptr -- int in
   dup
@@ -29,16 +29,16 @@ end
 
 inline proc cstr-to-str ptr -- int ptr in dup cstrlen swap end
 
-const offsetof(Str.count) sizeof(u64) offset end
+const offsetof(Str.count) sizeof(u32) offset end
 const offsetof(Str.data) sizeof(ptr) offset end
 const sizeof(Str) reset end
 
 inline proc Str.count ptr -- ptr in offsetof(Str.count) ptr+ end
 inline proc Str.data ptr -- ptr in offsetof(Str.data) ptr+ end
-inline proc @Str.count ptr -- int in Str.count @64 end
-inline proc @Str.data ptr -- ptr in Str.data  @64 cast(ptr) end
-inline proc !Str.count int ptr in Str.count !64 end
-inline proc !Str.data ptr ptr in Str.data  !64 end
+inline proc @Str.count ptr -- int in Str.count @32 end
+inline proc @Str.data ptr -- ptr in Str.data  @32 cast(ptr) end
+inline proc !Str.count int ptr in Str.count !32 end
+inline proc !Str.data ptr ptr in Str.data  !32 end
 
 inline proc @Str ptr -- int ptr in
   let s in
@@ -57,12 +57,12 @@ end
 inline proc str-null -- int ptr in 0 NULL end
 
 inline proc str-chop-one-left ptr in
-   dup Str.count dec64
-       Str.data inc64
+   dup Str.count dec32
+       Str.data inc32
 end
 
 inline proc str-chop-one-right ptr in
-  Str.count dec64
+  Str.count dec32
 end
 
 proc ?space int -- bool in
@@ -88,7 +88,7 @@ in
     else false end
   do
     dup str-chop-one-left
-    swap dup Str.count inc64 swap
+    swap dup Str.count inc32 swap
   end
   dup @Str.count 0 > if
     dup str-chop-one-left
@@ -137,11 +137,9 @@ end
 
 inline proc ?str-empty ptr -- bool in
   offsetof(Str.count) ptr+
-  @64
+  @32
   0 =
 end
-
-inline proc puts int ptr in traceUtf8 end
 
 const PUTU_BUFFER_CAP 32 end
 proc putu
@@ -188,14 +186,14 @@ in
   memory src sizeof(ptr) end
   memory dst sizeof(ptr) end
   memory result sizeof(ptr) end
-  dst !64
-  src !64
+  dst !32
+  src !32
   dst @ptr swap // result
   while dup 0 > do
     src @ptr @8
     dst @ptr !8
-    src inc64
-    dst inc64
+    src inc32
+    dst inc32
     1 -
   end drop
 end
@@ -208,13 +206,13 @@ proc memset
   ptr // data
 in
   memory data sizeof(ptr) end
-  data !64
-  memory byte sizeof(u64) end
-  byte !64
+  data !32
+  memory byte sizeof(u32) end
+  byte !32
   data @ptr swap
   while dup 0 > do
-    byte @64 data @ptr !8
-    data inc64
+    byte @32 data @ptr !8
+    data inc32
     1 -
   end
   drop
@@ -244,7 +242,7 @@ in
     memcpy drop
 
     count @ptr @int
-    count @ptr inc64
+    count @ptr inc32
 
     true
   else

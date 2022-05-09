@@ -1,7 +1,7 @@
 //
 // WASM-4: https://wasm4.org/docs
 
-include "core.porth"
+include "wasm-core.porth"
 
 export main "start"
 export update "update"
@@ -118,3 +118,6 @@ const $TONE_MODE4    12  end
 
 // Baked in random procedure. Returns a value between 1 and the given input.
 proc rnd int -- int in end
+
+// Alias for traceUtf8
+inline proc puts int ptr in traceUtf8 end

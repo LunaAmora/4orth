@@ -11,8 +11,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out from Git
-        uses: actions/checkout@v3
       - uses: dawidd6/action-download-artifact@v2
         with:
           workflow: CI.yml
@@ -35,12 +33,7 @@ jobs:
         env:
           TAG: ${{ steps.get_version.outputs.tag }}
         run: |
-          mv 4orth porth/
-          mv std/wasm4.porth porth/std
-          mv std/w4std.porth porth/std
-          mv std/wasi.porth porth/std
-          cd porth
-          zip -r ../"4oth-${TAG}-linux".zip *
+          zip -r "4oth-${TAG}-linux".zip .
         
       - name: Publish release if tag is new  
         if: ${{ steps.get_version.outputs.tag != steps.latest_version.outputs.latest_tag }}

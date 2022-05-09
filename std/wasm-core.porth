@@ -1,0 +1,113 @@
+// Core fundamental definitions of Porth, but lowered to u32 size.
+
+const NULL 0 cast(ptr) end
+
+const true  1 cast(bool) end
+const false 0 cast(bool) end
+
+const sizeof(u32) 4 end
+const sizeof(u16) 2 end
+const sizeof(u8)  1 end
+
+const sizeof(ptr)  sizeof(u32) end
+const sizeof(bool) sizeof(u32) end
+const sizeof(int)  sizeof(u32) end
+const sizeof(addr) sizeof(u32) end
+
+inline proc @ptr ptr -- ptr in @32 cast(ptr) end
+inline proc @@ptr ptr -- ptr in @ptr @ptr end
+inline proc @bool ptr -- bool in @32 cast(bool) end
+inline proc @int ptr -- int in @32 end
+inline proc @addr ptr -- addr in @int cast(addr) end
+
+inline proc !bool bool ptr in !32 end
+inline proc !ptr ptr ptr in !32 end
+inline proc !int int ptr in !32 end
+inline proc !addr addr ptr in !32 end
+
+inline proc ptr+ ptr int -- ptr in
+  swap cast(int)
+  swap cast(int)
+  +
+  cast(ptr)
+end
+
+inline proc ptr- ptr int -- ptr in
+  swap cast(int)
+  swap cast(int)
+  -
+  cast(ptr)
+end
+
+inline proc ptr!= ptr ptr -- bool in
+  swap cast(int)
+  swap cast(int)
+  !=
+end
+
+inline proc ptr= ptr ptr -- bool in
+  swap cast(int)
+  swap cast(int)
+  =
+end
+
+inline proc ptr< ptr ptr -- bool in
+  swap cast(int)
+  swap cast(int)
+  <
+end
+
+inline proc +ptr int ptr -- ptr in
+  cast(int) + cast(ptr)
+end
+
+inline proc ptr-diff ptr ptr -- int in
+  swap cast(int)
+  swap cast(int)
+  -
+end
+
+inline proc /    int int -- int in divmod drop end
+inline proc %    int int -- int in divmod swap drop end
+inline proc mod  int int -- int in % end
+inline proc div  int int -- int in / end
+inline proc imod int int -- int in idivmod swap drop end
+inline proc idiv int int -- int in idivmod drop end
+inline proc emod int int -- int in
+  let a b in
+    a
+    b imod
+    b +
+    b imod
+  end
+end
+
+inline proc lnot bool -- bool in
+  cast(int) 1 swap - cast(bool)
+end
+
+inline proc land bool bool -- bool in
+  swap cast(int)
+  swap cast(int)
+  and
+  cast(bool)
+end
+
+inline proc lor bool bool -- bool in
+  swap cast(int)
+  swap cast(int)
+  or
+  cast(bool)
+end
+
+inline proc inc32-by ptr int in over @32 + swap !32 end
+inline proc inc32 ptr in dup @32 1 + swap !32 end
+inline proc dec32 ptr in dup @32 1 - swap !32 end
+inline proc inc8 ptr in dup @8 1 + swap !8 end
+inline proc dec8 ptr in dup @8 1 - swap !8 end
+
+inline proc neg int -- int in not 1 + end
+
+inline proc ?null ptr -- bool in NULL ptr= end
+
+inline proc toggle ptr in dup @bool lnot swap !32 end

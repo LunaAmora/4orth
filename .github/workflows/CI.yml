@@ -65,7 +65,6 @@ jobs:
           name: 4orth
           path: |
             4orth
-            porth/std/core.porth
             std/
       
       - name: Test html Bundle 
