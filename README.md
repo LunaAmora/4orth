@@ -41,7 +41,7 @@ With Wasm-4, you can use the subcommands `-b` and `-r` to bundle and run after t
 $ ./4orth com -b -r main.porth
 ```
 
-Tip: Add `_4ORTH` (and `PORTH`, if bootstrapping) environment variable to automatically have the std libraries available in 4orth include path.
+Tip: Add `_4ORTH` environment variable to automatically have the std libraries available in 4orth include path.
 
 ### Running options and subcommands
 
@@ -77,26 +77,42 @@ SUBCOMMANDS:
 - Hexadecimal numbers (as `0x` format on numbers, and as `\\` plus 2 digits on strings)
 - Null terminated string support in const evaluation (evaluates to a pointer to the string)
 
-- Baked in pseudo random number generator (will be removed on the future).
-```porth
-proc rnd-coord -- int int in 20 rnd 20 rnd end
-```
-This proc for example returns two ints between 0 and 20.
+# Importing and exporting procs
+4orth introduces two new keywords allowing Porth to interact with the WASM module system:
 
-- Imports
+- Import
 ```porth
 import proc trace ptr in end
 ```
 This adds the ability to call the Wasm-4 `trace` function via the defined proc contract. Imported procs must have an empty body and no return type. 
 (Porth's `print` intrinsic calls this imported proc, you can use either of them to log to the console)
 
-- Exports
+- Export
 ```porth
 export main "start"
 export update "update"
 ```
 
 This exports the desired procs to be called by Wasm-4 or other Wasm runtimes.
+
+# Inline WASM code
+4orth allows you to inline WASM code into your program by using the `wasm` keyword. Any string inside the `wasm` block will be inlined in the compiled program.
+
+```porth
+wasm 
+  "\n;; Inlined global rng seed for the Pseudo random number generator."
+  "(global $random-state (mut i32) (i32.const 69420))" 
+end
+```
+
+# Importing modules (for raw WASM and WASI)
+
+The default module name used by Wasm-4 is `dev`. You can include other modules in your program by using the `import` keyword
+
+```porth
+import module "my_module"
+```
+This line changes the current module context to `my_module`. Every imported proc defined after this line will use this context until a new module is imported.
 
 # Others
 

@@ -1,4 +1,5 @@
 include "wasm4.porth"
+include "rand.porth"
 
 // Game state
 memory frame-count sizeof(int) end
@@ -53,7 +54,7 @@ const fruit-height 8 end
 const fruit-width  8 end
 
 // Helper inline procs
-inline proc rnd-coord -- int int in 20 rnd 20 rnd end
+inline proc rnd-coord -- int int in 20 rand 20 rand end
 inline proc ptr> ptr ptr -- bool in swap ptr< end
 
 // Wasm4 memory getters and setters

@@ -81,7 +81,8 @@ const $MOUSE_X       2     offset cast(ptr) end
 const $MOUSE_Y       2     offset cast(ptr) end
 const $MOUSE_BUTTONS 1     offset cast(ptr) end
 const $SYSTEM_FLAGS  1     offset cast(ptr) end
-const $RESERVED      128   offset cast(ptr) end // Reserved bytes for future use
+const $NETPLAY       1     offset cast(ptr) end // Experimental netplay player index
+const $RESERVED      127   offset cast(ptr) end // Reserved bytes for future use
 const $FRAMEBUFFER   6400  offset cast(ptr) end
 const $PORTH_MEM     54880 offset cast(ptr) end // Start of Porth global mem and return stack
 const $PORTH_STACK   4096  offset cast(ptr) end // Reserved memory for Porth data stack
@@ -115,9 +116,6 @@ const $TONE_MODE1    0   end
 const $TONE_MODE2    4   end
 const $TONE_MODE3    8   end
 const $TONE_MODE4    12  end
-
-// Baked in random procedure. Returns a value between 1 and the given input.
-proc rnd int -- int in end
 
 // Alias for traceUtf8
 inline proc puts int ptr in traceUtf8 end

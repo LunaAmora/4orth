@@ -62,6 +62,7 @@ const KEYWORD_LET         1 offset end
 const KEYWORD_PEEK        1 offset end
 const KEYWORD_IMPORT      1 offset end
 const KEYWORD_EXPORT      1 offset end
+const KEYWORD_WASM        1 offset end
 const COUNT_KEYWORDS         reset end
 
 proc keyword-by-name
@@ -72,7 +73,7 @@ in
   memory name sizeof(Str) end
   name !Str
   true
-  assert "Exhaustive keyword handling" COUNT_KEYWORDS 23 = end
+  assert "Exhaustive keyword handling" COUNT_KEYWORDS 24 = end
        name @Str "if"        streq if  KEYWORD_IF
   else name @Str "if*"       streq if* KEYWORD_IFSTAR
   else name @Str "else"      streq if* KEYWORD_ELSE
@@ -96,6 +97,7 @@ in
   else name @Str "peek"      streq if* KEYWORD_PEEK
   else name @Str "import"    streq if* KEYWORD_IMPORT
   else name @Str "export"    streq if* KEYWORD_EXPORT
+  else name @Str "wasm"      streq if* KEYWORD_WASM
   else
     drop false 0
   end
@@ -108,7 +110,7 @@ proc keyword-name
   --
   int ptr
 in
-  assert "Exhaustive keyword handling" COUNT_KEYWORDS 23 = end
+  assert "Exhaustive keyword handling" COUNT_KEYWORDS 24 = end
        dup KEYWORD_IF          = if  "if"
   else dup KEYWORD_IFSTAR      = if* "if*"
   else dup KEYWORD_ELSE        = if* "else"
@@ -132,6 +134,7 @@ in
   else dup KEYWORD_PEEK        = if* "peek"
   else dup KEYWORD_IMPORT      = if* "import"
   else dup KEYWORD_EXPORT      = if* "export"
+  else dup KEYWORD_WASM        = if* "wasm"
   else
     0 NULL
     here eputs ": unreachable\n" eputs
@@ -999,6 +1002,11 @@ const OP_PUSH_BIND       1 offset end
 // operand type:    int
 // operand purpose: the amount of elements to "unbind"
 const OP_UNBIND          1 offset end
+// OP_INJECT_CODE: 
+// TODO
+// operand type:    int
+// operand purpose: An index in injections array (See code injection section for more information).
+const OP_INJECT_CODE     1 offset end
 const COUNT_OPS             reset end
 
 proc op-type-as-str
@@ -1006,7 +1014,7 @@ proc op-type-as-str
   --
   int ptr // str
 in
-  assert "Exhaustive handling of Op types in print-op-type" COUNT_OPS 25 = end
+  assert "Exhaustive handling of Op types in print-op-type" COUNT_OPS 26 = end
        dup OP_PUSH_INT        =  if  "OP_PUSH_INT"
   else dup OP_PUSH_BOOL       =  if* "OP_PUSH_BOOL"
   else dup OP_PUSH_PTR        =  if* "OP_PUSH_PTR"
@@ -1032,6 +1040,7 @@ in
   else dup OP_BIND_PEEK       =  if* "OP_BIND_PEEK"
   else dup OP_UNBIND          =  if* "OP_UNBIND"
   else dup OP_PUSH_BIND       =  if* "OP_PUSH_BIND"
+  else dup OP_INJECT_CODE     =  if* "OP_INJECT_CODE"
   else
     here eputs ": Unknown op type\n" eputs 1 exit
     0 NULL
@@ -1118,6 +1127,32 @@ in
   end
 end
 /// END Strlit //////////////////////////////
+
+/// BEGIN Code Injection //////////////////////////////
+/// Array of strings to inject on the compiled program.
+/// The operand of OP_INJECT_CODE is the
+/// index within this array
+const INJECTIONS_CAP 2 1024 * end
+memory injections-count sizeof(int) end
+memory injections sizeof(Str) INJECTIONS_CAP * end
+
+proc injection-define
+  int ptr
+  --
+  int
+in
+  memory injection sizeof(Str) end
+  injection !Str
+
+  sizeof(Str) injection
+  INJECTIONS_CAP injections
+  injections-count
+  append-item lnot if
+    here eputs ": ERROR: code injection capacity exceeded\n" eputs
+    1 exit
+  end
+end
+/// END Code Injection //////////////////////////////
 
 /// BEGIN Const //////////////////////////////
 /// Array of the constants of the compiled program
@@ -1823,7 +1858,7 @@ in
       end
       drop // intrinsic
     else token Token.type ptr+ @64 TOKEN_KEYWORD = if*
-      assert "Exhaustive handling of keywords in eval-const-value" COUNT_KEYWORDS 23 = end
+      assert "Exhaustive handling of keywords in eval-const-value" COUNT_KEYWORDS 24 = end
       token Token.value ptr+ @64
         dup KEYWORD_END = if
           true done !64
@@ -2269,6 +2304,45 @@ in
   prok proc-define
 end
 
+proc introduce-injection
+  ptr // token
+  ptr // lexer
+in
+  memory lexer_ sizeof(ptr) end
+  lexer_ !ptr
+  memory token sizeof(Token) end
+  sizeof(Token) swap token memcpy drop
+  memory prok sizeof(Proc) end
+
+  sizeof(Proc) 0 prok memset drop
+
+  while token lexer_ @ptr lexer-next-token 
+    if
+      token Token.type ptr+
+      token Token.loc ptr+
+      token Token.value ptr+
+      let type loc value in
+        type @int TOKEN_KEYWORD = value @int KEYWORD_END = land if
+          false //break
+        else type @int TOKEN_STR != if*
+          token Token.loc ptr+ eputloc
+          ": ERROR: expected injected wasm to be a string but found " eputs
+          token Token.type ptr+ @int HUMAN_SINGULAR human-token-type  eputs
+          "\n"                                                        eputs
+          1 exit
+          false //break
+        else
+          OP_INJECT_CODE
+          value @Str injection-define
+          token
+          push-op
+          true //continue
+        end
+      end
+    else false end 
+  do end
+end
+
 proc inline-procedure
   ptr // proc
   ptr // token
@@ -2539,7 +2613,7 @@ proc include-paths-add-env bool int ptr in
   getenv-check if
     cstr-to-str append-std 
     rot lnot if 
-      "[INFO] Includding " puts over over puts " path\n" puts
+      "[INFO] Including " puts over over puts " path\n" puts
     end
     include-paths-add
   else drop drop end
@@ -2628,7 +2702,7 @@ in
             else type @int TOKEN_KEYWORD = if*
               value @int
               let keyword in
-                assert "Exhaustive handling of keywords in compile-file-into-ops" COUNT_KEYWORDS 23 = end
+                assert "Exhaustive handling of keywords in compile-file-into-ops" COUNT_KEYWORDS 24 = end
                 keyword KEYWORD_IF = if
                   ops-count @64 parse-block-stack-push
                   OP_IF 0 token push-op
@@ -2952,6 +3026,8 @@ in
                   end
                 else keyword KEYWORD_EXPORT = if*
                   token lexer introduce-export
+                else keyword KEYWORD_WASM = if*
+                  token lexer introduce-injection
                 else keyword KEYWORD_INLINE = if*
                   token lexer lexer-next-token lnot if
                     loc eputloc
@@ -3113,7 +3189,7 @@ in
               end
 
               value // token.value
-                assert "Exhaustive handling of Op types in compile-file-into-ops" COUNT_OPS 25 = end
+                assert "Exhaustive handling of Op types in compile-file-into-ops" COUNT_OPS 26 = end
                 dup @Str intrinsic-by-name if
                   OP_INTRINSIC swap token push-op
                 else drop dup @Str bind-table-lookup if*
@@ -3899,7 +3975,7 @@ in
       op
       memcpy drop
 
-      assert "Exhaustive handling of Op types in type-check-program-from" COUNT_OPS 25 = end
+      assert "Exhaustive handling of Op types in type-check-program-from" COUNT_OPS 26 = end
 
       op Op.type ptr+ @int OP_PUSH_INT = if
         DATATYPE_INT
@@ -3971,6 +4047,9 @@ in
 
         context TypeContext.ip ptr+ inc64
 
+        true  // continue
+      else op Op.type ptr+ @int OP_INJECT_CODE = if*
+        context TypeContext.ip ptr+ inc64
         true  // continue
       else op Op.type ptr+ @int OP_IF = if*
         op Op.token ptr+ context TypeContext.stack ptr+ type-check-if-op

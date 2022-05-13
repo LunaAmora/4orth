@@ -58,7 +58,7 @@ in
       op Op.type ptr+ @int
       op Op.operand ptr+ @int
       let type operand in
-        assert "Exhaustive handling of Op types in generate-op-wat" COUNT_OPS 25 = end
+        assert "Exhaustive handling of Op types in generate-op-wat" COUNT_OPS 26 = end
         skip-inline @bool  if
         else type OP_RET = if*
             operand 0 > if
@@ -121,6 +121,8 @@ in
         else type OP_PUSH_CSTR = if*
             " global.get $str" bfd bputs operand bfd bputu
             " call $push"      bfd bputs
+        else type OP_INJECT_CODE = if*
+            operand sizeof(Str) * injections +ptr @Str bfd bputs
         else type OP_IF = if*
             ifstar-current inc64
             " call $pop"       bfd bputs
@@ -148,8 +150,8 @@ in
             " call $pop"       bfd bputs
             " if"              bfd bputs
         else type OP_PREP_PROC = if*
-            op Op.token ptr+ Token.text ptr+ @Str proc-lookup-by-name dup Proc.name ptr+ 
-            let prok name in
+            op Op.token ptr+ Token.text ptr+ @Str proc-lookup-by-name
+            let prok in
               prok NULL ptr= if
                 here eputs ": Assertion Failed: couldn't find proc name by token text" eputs
                 1 exit
@@ -157,7 +159,7 @@ in
 
               prok Proc.inlinable ptr+ @bool 
               prok Proc.imported  ptr+ @int 0 != lor 
-              name @Str "rnd" streq lor if
+              if
                 true skip-inline !bool
               else
                 false skip-inline !bool
@@ -165,7 +167,7 @@ in
                 ") $f"                bfd bputs ip bfd bputu 
                 ")\n(func $f"         bfd bputs ip bfd bputu
 
-                " ;; proc " bfd bputs name @Str bfd bputs
+                " ;; proc " bfd bputs prok Proc.name ptr+ @Str bfd bputs
 
                 operand 0 > if
                   "\n i32.const "      bfd bputs operand bfd bputu
@@ -324,7 +326,7 @@ in
                 " call $rot"         bfd bputs
             else operand INTRINSIC_LOAD8 = if*
                 " call $pop"         bfd bputs
-                " i32.load8_s"       bfd bputs
+                " i32.load8_u"       bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_STORE8 = if*
                 " call $pop"         bfd bputs
@@ -332,7 +334,7 @@ in
                 " i32.store8"        bfd bputs
             else operand INTRINSIC_LOAD16 = if*
                 " call $pop"         bfd bputs
-                " i32.load16_s"      bfd bputs
+                " i32.load16_u"      bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_STORE16 = if*
                 " call $pop"         bfd bputs
@@ -635,30 +637,6 @@ in
         main-proc NULL ptr= if
           here eputs ": Assertion Failed: type checking phase did not check the existence of `main` procedure\n" eputs
           1 exit
-        end
-      end
-
-      "rnd" proc-lookup-by-name
-      let prok in
-        prok NULL ptr= lnot if 
-        "\n(global $random-state (mut i32) (i32.const 69420))\n" bfd bputs
-        "\n(func $frnd (local i32)\n"        bfd bputs
-        "  global.get   $random-state\n"     bfd bputs
-        "  local.tee 0  local.get 0\n"       bfd bputs
-        "  i32.const 13 i32.shl\n"           bfd bputs
-        "  i32.xor      local.tee 0\n"       bfd bputs
-        "  local.get 0  i32.const 17\n"      bfd bputs
-        "  i32.shr_u    i32.xor\n"           bfd bputs
-        "  local.tee 0  local.get 0\n"       bfd bputs
-        "  i32.const 5  i32.shl\n"           bfd bputs
-        "  i32.xor      local.tee 0\n"       bfd bputs
-        "  global.set   $random-state\n"     bfd bputs
-        "  local.get 0  i32.const 8\n"       bfd bputs
-        "  i32.shr_u    f32.convert_i32_u\n" bfd bputs
-        "  f32.const 0x1p-24 f32.mul\n"      bfd bputs
-        "  call $pop    f32.convert_i32_u\n" bfd bputs
-        "  f32.mul      i32.trunc_f32_u\n"   bfd bputs
-        "  call $push)\n"                    bfd bputs
         end
       end
       

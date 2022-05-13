@@ -1,4 +1,5 @@
 include "wasm4.porth"
+include "rand.porth"
 
 memory frame-count sizeof(int) end
 memory prev-state  sizeof(u8)  end
@@ -15,8 +16,8 @@ inline proc @gamepad  -- int in $GAMEPAD1 @8 end
 inline proc ++ ptr in inc32 end
 
 proc rnd-coord in
- frame-count @int rnd  65 % 5 +
- frame-count @int rnd 135 % 5 +
+ frame-count @int rand  65 % 5 +
+ frame-count @int rand 135 % 5 +
  set-coord
 end
 
@@ -32,8 +33,8 @@ proc check-keys in
   prev-state !8
 
   0 != if 
-    2 rnd 1 = if str1 else str2 end string !ptr
-    0xffffff rnd $PALETTE2 !int
+    2 rand 1 = if str1 else str2 end string !ptr
+    0xffffff rand $PALETTE2 !int
     rnd-coord
   end
 end
