@@ -107,7 +107,7 @@ end
 
 ### Importing modules (for raw WASM and WASI)
 
-The default module name used by Wasm-4 is `dev`. You can include other modules in your program by using the `import` keyword
+The default module imported by 4orth is `dev`. You can include other modules in your program by using the `import` keyword followed by `module` and the module name.
 
 ```porth
 import module "my_module"
