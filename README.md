@@ -69,7 +69,7 @@ SUBCOMMANDS:
 
 4orth currently only supports 32 bit integers.
 
-### Changes
+## Changes
 
 4orth implements some temporary features not available in Porth to facilitate Wasm integration:
 
@@ -77,7 +77,7 @@ SUBCOMMANDS:
 - Hexadecimal numbers (as `0x` format on numbers, and as `\\` plus 2 digits on strings)
 - Null terminated string support in const evaluation (evaluates to a pointer to the string)
 
-# Importing and exporting procs
+### Importing and exporting procs
 4orth introduces two new keywords allowing Porth to interact with the WASM module system:
 
 - Import
@@ -95,7 +95,7 @@ export update "update"
 
 This exports the desired procs to be called by Wasm-4 or other Wasm runtimes.
 
-# Inline WASM code
+### Inline WASM code
 4orth allows you to inline WASM code into your program by using the `wasm` keyword. Any string inside the `wasm` block will be inlined in the compiled program.
 
 ```porth
@@ -105,7 +105,7 @@ wasm
 end
 ```
 
-# Importing modules (for raw WASM and WASI)
+### Importing modules (for raw WASM and WASI)
 
 The default module name used by Wasm-4 is `dev`. You can include other modules in your program by using the `import` keyword
 
@@ -114,7 +114,7 @@ import module "my_module"
 ```
 This line changes the current module context to `my_module`. Every imported proc defined after this line will use this context until a new module is imported.
 
-# Others
+## Others
 
 All available [functions](https://wasm4.org/docs/reference/functions), constants and the [memory map](https://wasm4.org/docs/reference/memory) from Wasm-4 are in the [wasm4.porth](./std/wasm4.porth) library.
 
