@@ -84,7 +84,7 @@ SUBCOMMANDS:
 ```porth
 import proc trace ptr in end
 ```
-This adds the ability to call the Wasm-4 `trace` function via the defined proc contract. Imported procs must have an empty body and no return type. 
+This adds the ability to call the Wasm-4 `trace` function via the defined proc contract. Imported procs must have an empty body. 
 (Porth's `print` intrinsic calls this imported proc, you can use either of them to log to the console)
 
 - Export
@@ -96,11 +96,11 @@ export update "update"
 This exports the desired procs to be called by Wasm-4 or other Wasm runtimes.
 
 ### Inline WASM code
-4orth allows you to inline WASM code into your program by using the `wasm` keyword. Any string inside the `wasm` block will be inlined in the compiled program.
+4orth allows you to inline WASM code into your program by using the `wasm` keyword. Any string inside the code block will be inlined in the compiled program.
 
 ```porth
 wasm 
-  "\n;; Inlined global rng seed for the Pseudo random number generator."
+  "\n;; Inlined global rng seed for a Pseudo random number generator."
   "(global $random-state (mut i32) (i32.const 69420))" 
 end
 ```
