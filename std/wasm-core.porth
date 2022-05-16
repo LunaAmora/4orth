@@ -111,3 +111,12 @@ inline proc neg int -- int in not 1 + end
 inline proc ?null ptr -- bool in NULL ptr= end
 
 inline proc toggle ptr in dup @bool lnot swap !32 end
+
+inline proc xor int int -- int in
+  wasm int int -- int in
+    " call $pop"
+    " call $pop"
+    " i32.xor"
+    " call $push"
+  end
+end

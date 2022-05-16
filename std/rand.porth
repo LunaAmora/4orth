@@ -1,23 +1,23 @@
 // Inlined WASM code for a Pseudo random number generator.
-wasm "\n(global $random-state (mut i32) (i32.const 69420))" end
-
-proc rand int -- int in
-  wasm "(local i32)"
-  "global.get   $random-state"
-  "local.tee 0  local.get 0"
-  "i32.const 13 i32.shl"
-  "i32.xor      local.tee 0"
-  "local.get 0  i32.const 17"
-  "i32.shr_u    i32.xor"
-  "local.tee 0  local.get 0"
-  "i32.const 5  i32.shl"
-  "i32.xor      local.tee 0"
-  "global.set   $random-state"
-  "local.get 0  i32.const 8"
-  "i32.shr_u    f32.convert_i32_u"
-  "f32.const 0x1p-24 f32.mul"
-  "call $pop    f32.convert_i32_u"
-  "f32.mul      i32.trunc_f32_u"
-  "call $push"
-  end
+wasm 
+  "\n(global $random-state (mut i32) (i32.const 69420))"
+  proc rand int -- int in
+    " (local i32)"
+    " global.get   $random-state"
+    " local.tee 0  local.get 0"
+    " i32.const 13 i32.shl"
+    " i32.xor      local.tee 0"
+    " local.get 0  i32.const 17"
+    " i32.shr_u    i32.xor"
+    " local.tee 0  local.get 0"
+    " i32.const 5  i32.shl"
+    " i32.xor      local.tee 0"
+    " global.set   $random-state"
+    " local.get 0  i32.const 8"
+    " i32.shr_u    f32.convert_i32_u"
+    " f32.const 0x1p-24 f32.mul"
+    " call $pop    f32.convert_i32_u"
+    " f32.mul      i32.trunc_f32_u"
+    " call $push"
+  end 
 end

@@ -58,7 +58,7 @@ in
       op Op.type ptr+ @int
       op Op.operand ptr+ @int
       let type operand in
-        assert "Exhaustive handling of Op types in generate-op-wat" COUNT_OPS 26 = end
+        assert "Exhaustive handling of Op types in generate-op-wat" COUNT_OPS 27 = end
         skip-inline @bool  if
         else type OP_RET = if*
             operand 0 > if
@@ -121,6 +121,7 @@ in
         else type OP_PUSH_CSTR = if*
             " global.get $str" bfd bputs operand bfd bputu
             " call $push"      bfd bputs
+        else type OP_INJECTED = if*
         else type OP_INJECT_CODE = if*
             operand sizeof(Str) * injections +ptr @Str bfd bputs
         else type OP_IF = if*
@@ -212,7 +213,7 @@ in
         else type OP_INLINED = if*
         else type OP_INTRINSIC = if*
             assert "Exhaustive handling of Intrinsics in generate-op-wat"
-              COUNT_INTRINSICS 47 =
+              COUNT_INTRINSICS 46 =
             end
 
             operand INTRINSIC_PLUS = if
@@ -264,11 +265,6 @@ in
                 " call $pop"         bfd bputs
                 " call $pop"         bfd bputs
                 " i32.and"           bfd bputs
-                " call $push"        bfd bputs
-            else operand INTRINSIC_XOR = if*
-                " call $pop"         bfd bputs
-                " call $pop"         bfd bputs
-                " i32.xor"           bfd bputs
                 " call $push"        bfd bputs
             else operand INTRINSIC_NOT = if*
                 " call $pop"         bfd bputs

@@ -645,7 +645,6 @@ const INTRINSIC_SHL       1 offset end
 const INTRINSIC_OR        1 offset end
 const INTRINSIC_AND       1 offset end
 const INTRINSIC_NOT       1 offset end
-const INTRINSIC_XOR       1 offset end
 const INTRINSIC_PRINT     1 offset end
 const INTRINSIC_DUP       1 offset end
 const INTRINSIC_SWAP      1 offset end
@@ -683,7 +682,7 @@ proc intrinsic-name
   --
   int ptr // name
 in
-  assert "Exhaustive handling of Intrinsics in intrinsic-name" COUNT_INTRINSICS 47 = end
+  assert "Exhaustive handling of Intrinsics in intrinsic-name" COUNT_INTRINSICS 46 = end
        dup INTRINSIC_PLUS      = if  drop "+"
   else dup INTRINSIC_MINUS     = if* drop "-"
   else dup INTRINSIC_MUL       = if* drop "*"
@@ -702,7 +701,6 @@ in
   else dup INTRINSIC_OR        = if* drop "or"
   else dup INTRINSIC_AND       = if* drop "and"
   else dup INTRINSIC_NOT       = if* drop "not"
-  else dup INTRINSIC_XOR       = if* drop "xor"
   else dup INTRINSIC_DUP       = if* drop "dup"
   else dup INTRINSIC_SWAP      = if* drop "swap"
   else dup INTRINSIC_DROP      = if* drop "drop"
@@ -747,7 +745,7 @@ in
   memory name sizeof(Str) end
   name !Str
   true
-  assert "Exhaustive handling of Intrinsics in intrinsic-by-name" COUNT_INTRINSICS 47 = end
+  assert "Exhaustive handling of Intrinsics in intrinsic-by-name" COUNT_INTRINSICS 46 = end
        name @Str "+"          streq if  INTRINSIC_PLUS
   else name @Str "-"          streq if* INTRINSIC_MINUS
   else name @Str "*"          streq if* INTRINSIC_MUL
@@ -766,7 +764,6 @@ in
   else name @Str "or"         streq if* INTRINSIC_OR
   else name @Str "and"        streq if* INTRINSIC_AND
   else name @Str "not"        streq if* INTRINSIC_NOT
-  else name @Str "xor"        streq if* INTRINSIC_XOR
   else name @Str "dup"        streq if* INTRINSIC_DUP
   else name @Str "swap"       streq if* INTRINSIC_SWAP
   else name @Str "drop"       streq if* INTRINSIC_DROP
@@ -1002,11 +999,14 @@ const OP_PUSH_BIND       1 offset end
 // operand type:    int
 // operand purpose: the amount of elements to "unbind"
 const OP_UNBIND          1 offset end
-// OP_INJECT_CODE: 
-// TODO
+// OP_INJECT_CODE: Points to a string to be inlined in the compiled code.
 // operand type:    int
 // operand purpose: An index in injections array (See code injection section for more information).
 const OP_INJECT_CODE     1 offset end
+// OP_INJECTED: Denotes the start of a inlined code block.
+// operand type:    adr
+// operand purpose: the address of the start of the code block
+const OP_INJECTED        1 offset end
 const COUNT_OPS             reset end
 
 proc op-type-as-str
@@ -1014,7 +1014,7 @@ proc op-type-as-str
   --
   int ptr // str
 in
-  assert "Exhaustive handling of Op types in print-op-type" COUNT_OPS 26 = end
+  assert "Exhaustive handling of Op types in print-op-type" COUNT_OPS 27 = end
        dup OP_PUSH_INT        =  if  "OP_PUSH_INT"
   else dup OP_PUSH_BOOL       =  if* "OP_PUSH_BOOL"
   else dup OP_PUSH_PTR        =  if* "OP_PUSH_PTR"
@@ -1040,6 +1040,7 @@ in
   else dup OP_BIND_PEEK       =  if* "OP_BIND_PEEK"
   else dup OP_UNBIND          =  if* "OP_UNBIND"
   else dup OP_PUSH_BIND       =  if* "OP_PUSH_BIND"
+  else dup OP_INJECTED        =  if* "OP_INJECTED"
   else dup OP_INJECT_CODE     =  if* "OP_INJECT_CODE"
   else
     here eputs ": Unknown op type\n" eputs 1 exit
@@ -1127,32 +1128,6 @@ in
   end
 end
 /// END Strlit //////////////////////////////
-
-/// BEGIN Code Injection //////////////////////////////
-/// Array of strings to inject on the compiled program.
-/// The operand of OP_INJECT_CODE is the
-/// index within this array
-const INJECTIONS_CAP 2 1024 * end
-memory injections-count sizeof(int) end
-memory injections sizeof(Str) INJECTIONS_CAP * end
-
-proc injection-define
-  int ptr
-  --
-  int
-in
-  memory injection sizeof(Str) end
-  injection !Str
-
-  sizeof(Str) injection
-  INJECTIONS_CAP injections
-  injections-count
-  append-item lnot if
-    here eputs ": ERROR: code injection capacity exceeded\n" eputs
-    1 exit
-  end
-end
-/// END Code Injection //////////////////////////////
 
 /// BEGIN Const //////////////////////////////
 /// Array of the constants of the compiled program
@@ -1335,6 +1310,7 @@ const PROCS_CAP 1024 end
 memory procs-count sizeof(u64) end
 memory procs sizeof(Proc) PROCS_CAP * end
 memory inside-proc sizeof(bool) end
+memory inside-injection sizeof(bool) end
 
 proc proc-lookup-by-name
   int ptr // proc name
@@ -1484,6 +1460,75 @@ in
   drop
 end
 /// END Memory //////////////////////////////
+
+/// BEGIN Code Injection //////////////////////////////
+/// Array of strings to inject on the compiled program.
+/// The operand of OP_INJECT_CODE is the
+/// index within this array
+const Inject.ins  sizeof(TypeStack) offset end
+const Inject.outs sizeof(TypeStack) offset end
+const Inject.size sizeof(int) offset end
+const Inject.addr sizeof(int) offset end
+const sizeof(Injection) reset end
+
+const INJECT_CAP 1024 end
+memory inject-count sizeof(u64) end
+memory injects sizeof(Injection) INJECT_CAP * end
+
+proc inject-define
+  ptr // proc
+in
+  sizeof(Injection) swap INJECT_CAP injects inject-count append-item lnot if
+    here eputs ": ERROR: injections definitions capacity exceeded\n" eputs
+    1 exit
+  end
+  drop
+end
+
+proc inject-lookup-by-addr
+  int // proc addr
+  --
+  ptr // proc
+in
+  memory addr sizeof(int) end
+  addr !int
+
+  0 while
+    dup inject-count @64 < if
+      dup sizeof(Injection) * injects +ptr Inject.addr ptr+ @int
+      addr @int
+      !=
+    else false end
+  do 1 + end
+
+  dup inject-count @64 < if
+    sizeof(Injection) * injects +ptr
+  else
+    drop NULL
+  end
+end
+
+const INJECTIONS_CAP 2 1024 * end
+memory injections-count sizeof(int) end
+memory injections sizeof(Str) INJECTIONS_CAP * end
+
+proc injection-define
+  int ptr
+  --
+  int
+in
+  memory injection sizeof(Str) end
+  injection !Str
+
+  sizeof(Str) injection
+  INJECTIONS_CAP injections
+  injections-count
+  append-item lnot if
+    here eputs ": ERROR: code injection capacity exceeded\n" eputs
+    1 exit
+  end
+end
+/// END Code Injection //////////////////////////////
 
 memory silent sizeof(bool) end
 
@@ -2005,6 +2050,12 @@ in
           end
           swap
         drop
+      else inside-injection @bool token Token.type ptr+ @int TOKEN_STR = land if*
+        OP_INJECT_CODE
+        token Token.value ptr+ @Str injection-define
+        token
+        push-op
+        false // break, no contract in inlined block
       else
         token Token.loc ptr+                                     eputloc
         ": ERROR: "                                              eputs
@@ -2304,6 +2355,17 @@ in
   prok proc-define
 end
 
+proc current-inject -- ptr in
+  inside-injection @bool if
+    inject-count @int
+    1 -
+    sizeof(Injection) *
+    injects +ptr
+  else
+    NULL
+  end
+end
+
 proc introduce-injection
   ptr // token
   ptr // lexer
@@ -2312,35 +2374,30 @@ in
   lexer_ !ptr
   memory token sizeof(Token) end
   sizeof(Token) swap token memcpy drop
-  memory prok sizeof(Proc) end
+  memory injekt sizeof(Injection) end
+  sizeof(Injection) 0 injekt memset drop
 
-  sizeof(Proc) 0 prok memset drop
+  ops-count @64
+  dup injekt Inject.addr ptr+ !64
+  parse-block-stack-push
 
-  while token lexer_ @ptr lexer-next-token 
-    if
-      token Token.type ptr+
-      token Token.loc ptr+
-      token Token.value ptr+
-      let type loc value in
-        type @int TOKEN_KEYWORD = value @int KEYWORD_END = land if
-          false //break
-        else type @int TOKEN_STR != if*
-          token Token.loc ptr+ eputloc
-          ": ERROR: expected injected wasm to be a string but found " eputs
-          token Token.type ptr+ @int HUMAN_SINGULAR human-token-type  eputs
-          "\n"                                                        eputs
-          1 exit
-          false //break
-        else
-          OP_INJECT_CODE
-          value @Str injection-define
-          token
-          push-op
-          true //continue
-        end
+  OP_INJECTED 
+  ops-count @64 
+  token 
+  push-op
+
+  true inside-injection !bool
+
+  inside-proc @bool if
+    injekt
+      lexer_ @ptr over Inject.ins ptr+ parse-proc-contract-list if
+        lexer_ @ptr over Inject.outs ptr+ parse-proc-contract-list drop
       end
-    else false end 
-  do end
+    drop
+  end
+
+
+  injekt inject-define
 end
 
 proc inline-procedure
@@ -2883,6 +2940,18 @@ in
 
                       local-memories-clean
                       false inside-proc !bool
+                    else begin-type OP_INJECTED = if*
+
+                      // Compute the size of the injection
+                      current-inject
+                      let injekt in injekt ?null lnot if
+                        ops-count @int
+                        injekt Inject.addr ptr+ @int -
+                        1 -
+
+                        injekt Inject.size ptr+ !int
+                        false inside-injection !bool
+                      end end
                     else begin-type OP_BIND_LET = begin-type OP_BIND_PEEK = lor if*
                       begin-op Op.operand ptr+ @int
                       let bind-count in
@@ -3189,7 +3258,7 @@ in
               end
 
               value // token.value
-                assert "Exhaustive handling of Op types in compile-file-into-ops" COUNT_OPS 26 = end
+                assert "Exhaustive handling of Op types in compile-file-into-ops" COUNT_OPS 27 = end
                 dup @Str intrinsic-by-name if
                   OP_INTRINSIC swap token push-op
                 else drop dup @Str bind-table-lookup if*
@@ -3262,19 +3331,26 @@ in
                   1 exit
                 end
               drop // token.value
-            else type @int TOKEN_STR = if*
-              inside-proc @bool lnot if
-                loc                                     eputloc
-                ": ERROR: "                                              eputs
-                token Token.type ptr+ @int HUMAN_PLURAL human-token-type eputs
-                " are not allowed at the top level of the program\n"     eputs
-                1 exit
-              end
+           else type @int TOKEN_STR = if*
+              inside-injection @bool if
+                OP_INJECT_CODE
+                value @Str injection-define
+                token
+                push-op
+              else 
+                inside-proc @bool lnot if
+                  loc                                     eputloc
+                  ": ERROR: "                                              eputs
+                  token Token.type ptr+ @int HUMAN_PLURAL human-token-type eputs
+                  " are not allowed at the top level of the program\n"     eputs
+                  1 exit
+                end
 
-              OP_PUSH_STR
-              value @Str strlit-define
-              token
-              push-op
+                OP_PUSH_STR
+                value @Str strlit-define
+                token
+                push-op
+              end
             else type @int TOKEN_CSTR = if*
               inside-proc @bool lnot if
                 loc                                     eputloc
@@ -3975,7 +4051,7 @@ in
       op
       memcpy drop
 
-      assert "Exhaustive handling of Op types in type-check-program-from" COUNT_OPS 26 = end
+      assert "Exhaustive handling of Op types in type-check-program-from" COUNT_OPS 27 = end
 
       op Op.type ptr+ @int OP_PUSH_INT = if
         DATATYPE_INT
@@ -4186,6 +4262,29 @@ in
         context TypeContext.ip ptr+ !int
 
         true // continue
+      else op Op.type ptr+ @int OP_INJECTED = if*
+        op Op.token ptr+
+        context TypeContext.stack ptr+
+        op Op.operand ptr+ @int inject-lookup-by-addr
+          dup NULL ptr= if
+            here eputs ": Assertion Failed: expect inject always exist with this specific address. Something went wrong during the compilation process\n" eputs
+            1 exit
+          end
+          dup  Inject.ins  ptr+
+          swap Inject.outs ptr+
+        type-check-stack
+
+        context TypeContext.ip ptr+ @int
+        op Op.operand ptr+ @int inject-lookup-by-addr
+        dup NULL ptr= if
+          here eputs ": Assertion Failed: expect inject always exist with this specific address. Something went wrong during the compilation process\n" eputs
+          1 exit
+        end
+        Inject.size ptr+ @int +
+        1 +
+        context TypeContext.ip ptr+ !int
+
+        true // continue
       else op Op.type ptr+ @int OP_WHILE = if*
         context TypeContext.ip ptr+ @int
         context TypeContext.block-start-ip ptr+ @int != if
@@ -4219,7 +4318,7 @@ in
         // else branch
         false // break
       else op Op.type ptr+ @int OP_INTRINSIC = if*
-        assert "Exhaustive handling of Intrinsics in type-check-program-from" COUNT_INTRINSICS 47 = end
+        assert "Exhaustive handling of Intrinsics in type-check-program-from" COUNT_INTRINSICS 46 = end
 
         op Op.operand ptr+ @int
           dup INTRINSIC_PLUS = if
@@ -4251,8 +4350,6 @@ in
           else dup INTRINSIC_SHL = if*
             op Op.token ptr+ context TypeContext.stack ptr+ type-check-binary-int-operator
           else dup INTRINSIC_OR = if*
-            op Op.token ptr+ context TypeContext.stack ptr+ type-check-binary-int-operator
-          else dup INTRINSIC_XOR = if*
             op Op.token ptr+ context TypeContext.stack ptr+ type-check-binary-int-operator
           else dup INTRINSIC_AND = if*
             op Op.token ptr+ context TypeContext.stack ptr+ type-check-binary-int-operator

@@ -73,7 +73,6 @@ SUBCOMMANDS:
 
 4orth implements some temporary features not available in Porth to facilitate Wasm integration:
 
-- Xor Intrinsic
 - Hexadecimal numbers (as `0x` format on numbers, and as `\\` plus 2 digits on strings)
 - Null terminated string support in const evaluation (evaluates to a pointer to the string)
 
@@ -104,6 +103,21 @@ wasm
   "(global $random-state (mut i32) (i32.const 69420))" 
 end
 ```
+
+When inside a procedure, inline WASM blocks can define a contract to be used in type checking.
+
+```porth
+inline proc xor int int -- int in
+  wasm int int -- int in
+    " call $pop"
+    " call $pop"
+    " i32.xor"
+    " call $push"
+  end
+end
+```
+
+This implements a `xor` procedure utilizing the WASM `i32.xor` instruction. (This proc is available at [wasm-core.porth](./std/wasm-core.porth))
 
 ### Importing modules (for raw WASM and WASI)
 
