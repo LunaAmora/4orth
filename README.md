@@ -1,3 +1,10 @@
+<p align="center">
+        <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/lunaamora/4orth/CI">
+        <img alt="GitHub release (latest by date including pre-releases)" src="https://img.shields.io/github/v/release/lunaamora/4orth?include_prereleases">
+        <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/lunaamora/4orth/total">
+        <img alt="GitHub" src="https://img.shields.io/github/license/lunaamora/4orth">
+</p>
+
 # 4orth 
 4orth is a [Porth](https://gitlab.com/tsoding/porth) compiler with [WASM](https://webassembly.org/), [WASI](https://wasi.dev/) and [WASM-4](https://wasm4.org/) targets.
 
