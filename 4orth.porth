@@ -1,7 +1,7 @@
 // The porth to wasm compiler implemented over a modified Porth implementation.
 
-include "4std.porth"
-include "porth-4ork.porth"
+include "modules/4std.porth"
+include "modules/porth-4ork.porth"
 
 proc include-paths-add-env int ptr in
   getenv-check if

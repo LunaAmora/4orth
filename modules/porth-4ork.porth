@@ -2935,7 +2935,7 @@ in
   end
 end
 
-include "4orth-compilation.porth"
+include "./modules/4orth-compilation.porth"
 
 proc compile-file-into-ops
   ptr  // file path cstr
