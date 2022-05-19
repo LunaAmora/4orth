@@ -15,7 +15,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Setup env
         run: |
@@ -41,12 +42,13 @@ jobs:
           path: |
             porth/porth
             porth/std
-          key: ${{ runner.os }}-porth-lib
+            porth/tests
+          key: ${{ runner.os }}-porth-module
           
       - name: Bootstrap Porth
         if: steps.cache-porth.outputs.cache-hit != 'true'
         run: |
-          git clone https://gitlab.com/tsoding/porth.git
+          git submodule update --init --recursive
           cd porth
           fasm -m 524288 ./bootstrap/porth-linux-x86_64.fasm
           chmod +x ./bootstrap/porth-linux-x86_64

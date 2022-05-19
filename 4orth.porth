@@ -758,10 +758,6 @@ in
 end
 
 proc wasm-main in
-  // Default include paths
-  "."     include-paths-add
-  "./std" include-paths-add
-
   memory output-file-path-cstr sizeof(ptr) end
   NULL output-file-path-cstr !ptr
   memory optimize sizeof(bool) end
@@ -1044,8 +1040,9 @@ end
 
 proc main in
   // Default include paths
-  "."      include-paths-add
-  "./std"  include-paths-add
+  "."           include-paths-add
+  "./std"       include-paths-add
+  "./porth/std" include-paths-add
   "_4ORTH" include-paths-add-env
   "PORTH"  include-paths-add-env
 

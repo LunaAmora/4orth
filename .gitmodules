@@ -1,0 +1,3 @@
+[submodule "porth"]
+	path = porth
+	url = https://gitlab.com/tsoding/porth.git
