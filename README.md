@@ -56,6 +56,7 @@ Tip: Add `_4ORTH` environment variable to automatically have the std libraries a
 $ ./4orth [OPTIONS] <SUBCOMMAND>
 
 OPTIONS:
+    -porth               Use the original porth compiler and CLI instead of 4orth.
     -unsafe              Disable type checking.
     -I <path>            Add <path> to the include paths list.
 SUBCOMMANDS:
