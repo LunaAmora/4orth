@@ -14,14 +14,16 @@ You can download the latest [release](https://github.com/FrankWPA/4orth/releases
 
 ### Bootstrapping
 
-Since Porth is self-hosted you need to bootstrap it first. Follow [Porth](https://gitlab.com/tsoding/porth) bootstrapping instructions on how to do that.
+Since Porth is self-hosted you will need to bootstrap it first. Follow Porth [bootstrapping](https://gitlab.com/tsoding/porth#bootstrapping) instructions on how to do that. (4orth includes the original porth compiler with the -porth option, so you can use the 4orth executale instead to bootstrap/update itself)
 
 Secondly you will need to install:
 - [WABT](https://github.com/WebAssembly/wabt)
 - [Binaryen](https://github.com/WebAssembly/binaryen) (optional, for optimized .wasm files)
 
 ```console
-$ ./porth com 4orth.porth
+$ ./porth/porth com 4orth.porth
+              <or>
+$ ./4orth -porth com 4orth.porth 
 ```
 
 Then, you are ready to compile and run your Porth programs using the runtime of your choice:
