@@ -42,8 +42,7 @@ jobs:
           path: |
             porth/porth
             porth/std
-            porth/tests
-          key: ${{ runner.os }}-porth-module
+          key: ${{ runner.os }}-porth-submodule
           
       - name: Bootstrap Porth
         if: steps.cache-porth.outputs.cache-hit != 'true'
