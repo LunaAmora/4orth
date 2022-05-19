@@ -1489,6 +1489,576 @@ in
     drop drop drop
   end
 end
+
+proc generate-print-intel-linux-x86_64
+  ptr // bfd
+in
+  let bfd in
+    "print:\n"                               bfd bputs
+    "    mov     r9, -3689348814741910323\n" bfd bputs
+    "    sub     rsp, 40\n"                  bfd bputs
+    "    mov     BYTE [rsp+31], 10\n"        bfd bputs
+    "    lea     rcx, [rsp+30]\n"            bfd bputs
+    ".L2:\n"                                 bfd bputs
+    "    mov     rax, rdi\n"                 bfd bputs
+    "    lea     r8, [rsp+32]\n"             bfd bputs
+    "    mul     r9\n"                       bfd bputs
+    "    mov     rax, rdi\n"                 bfd bputs
+    "    sub     r8, rcx\n"                  bfd bputs
+    "    shr     rdx, 3\n"                   bfd bputs
+    "    lea     rsi, [rdx+rdx*4]\n"         bfd bputs
+    "    add     rsi, rsi\n"                 bfd bputs
+    "    sub     rax, rsi\n"                 bfd bputs
+    "    add     eax, 48\n"                  bfd bputs
+    "    mov     BYTE [rcx], al\n"           bfd bputs
+    "    mov     rax, rdi\n"                 bfd bputs
+    "    mov     rdi, rdx\n"                 bfd bputs
+    "    mov     rdx, rcx\n"                 bfd bputs
+    "    sub     rcx, 1\n"                   bfd bputs
+    "    cmp     rax, 9\n"                   bfd bputs
+    "    ja      .L2\n"                      bfd bputs
+    "    lea     rax, [rsp+32]\n"            bfd bputs
+    "    mov     edi, 1\n"                   bfd bputs
+    "    sub     rdx, rax\n"                 bfd bputs
+    "    xor     eax, eax\n"                 bfd bputs
+    "    lea     rsi, [rsp+32+rdx]\n"        bfd bputs
+    "    mov     rdx, r8\n"                  bfd bputs
+    "    mov     rax, 1\n"                   bfd bputs
+    "    syscall\n"                          bfd bputs
+    "    add     rsp, 40\n"                  bfd bputs
+    "    ret\n"                              bfd bputs
+  end
+end
+
+proc generate-op-comment ptr ptr in
+  let op bfd in
+    op Op.type    ptr+ @int
+    op Op.operand ptr+ @int
+    op Op.token   ptr+
+    let type operand token in
+      " ;; "                   bfd bputs
+      token Token.loc ptr+     bfd bputloc
+      ": "                     bfd bputs
+      type op-type-as-str      bfd bputs
+      " "                      bfd bputs
+      type OP_INTRINSIC = if
+        operand intrinsic-name bfd bputs
+      else
+        operand                bfd bputu
+      end
+      "\n"                     bfd bputs
+    end
+  end
+end
+
+proc generate-op-intel-linux-x86_64
+  int // ip
+  ptr // bfd
+in
+  let ip bfd in
+    "addr_" bfd bputs
+    ip      bfd bputu
+    ":"     bfd bputs
+
+    ip sizeof(Op) * ops +ptr
+    let op in
+      op bfd generate-op-comment
+
+      op Op.type ptr+ @int
+      op Op.operand ptr+ @int
+      let type operand in
+        assert "Exhaustive handling of Op types in generate-op-intel-linux-x86_64" COUNT_OPS 27 = end
+        type OP_PUSH_INT = if
+           "    mov rax, "   bfd bputs operand bfd bputu "\n" bfd bputs
+           "    push rax\n"  bfd bputs
+        else type OP_PUSH_BOOL = if*
+           "    mov rax, "   bfd bputs operand bfd bputu "\n" bfd bputs
+           "    push rax\n"  bfd bputs
+        else type OP_PUSH_PTR = if*
+           "    mov rax, "   bfd bputs operand bfd bputu "\n" bfd bputs
+           "    push rax\n"  bfd bputs
+        else type OP_PUSH_ADDR = if*
+           "    mov rax, addr_" bfd bputs operand bfd bputu "\n" bfd bputs
+           "    push rax\n"     bfd bputs
+        else type OP_CALL_LIKE = if*
+           "    pop rbx\n"                  bfd bputs
+           "    mov rax, rsp\n"             bfd bputs
+           "    mov rsp, [ret_stack_rsp]\n" bfd bputs
+           "    call rbx\n"                 bfd bputs
+           "    mov [ret_stack_rsp], rsp\n" bfd bputs
+           "    mov rsp, rax\n"             bfd bputs
+        else type OP_BIND_LET = if*
+          "    mov rax, [ret_stack_rsp]\n"  bfd bputs
+          "    sub rax, "                   bfd bputs
+          operand 8 *       bfd bputu
+          "\n"                              bfd bputs
+          "    mov [ret_stack_rsp], rax\n"  bfd bputs
+          operand
+          while dup 0 > do
+            "    pop rbx\n" bfd bputs
+            "    mov [rax+" bfd bputs
+            dup 1 - 8 *     bfd bputu
+            "], rbx\n"      bfd bputs
+            1 -
+          end drop
+        else type OP_BIND_PEEK = if*
+          "    mov rax, [ret_stack_rsp]\n"  bfd bputs
+          "    sub rax, "                   bfd bputs operand 8 * bfd bputu "\n" bfd bputs
+          "    mov [ret_stack_rsp], rax\n"  bfd bputs
+
+          0
+          operand
+          while over over < do
+            let i n in
+              "    mov rbx, [rsp+" bfd bputs
+              i 8 *                bfd bputu
+              "]\n"                bfd bputs
+
+              "    mov [rax+"      bfd bputs
+              n i - 1 - 8 *        bfd bputu
+              "], rbx\n"           bfd bputs
+
+              i 1 +
+              n
+            end
+          end
+          drop
+          drop
+        else type OP_UNBIND = if*
+          "    mov rax, [ret_stack_rsp]\n"  bfd bputs
+          "    add rax, "                   bfd bputs
+          operand 8 *       bfd bputu
+          "\n"                              bfd bputs
+          "    mov [ret_stack_rsp], rax\n"  bfd bputs
+        else type OP_PUSH_BIND = if*
+           "    mov rax, [ret_stack_rsp]\n" bfd bputs
+           "    add rax, "                  bfd bputs
+           operand 8 *      bfd bputu
+           "\n"                             bfd bputs
+           "    push QWORD [rax]\n"         bfd bputs
+        else type OP_PUSH_LOCAL_MEM = if*
+           "    mov rax, [ret_stack_rsp]\n" bfd bputs
+           "    add rax, "                  bfd bputs
+           operand          bfd bputu
+           "\n"                             bfd bputs
+           "    push rax\n"                 bfd bputs
+        else type OP_PUSH_GLOBAL_MEM = if*
+           "    push mem+" bfd bputs operand bfd bputu "\n" bfd bputs
+        else type OP_PUSH_STR = if*
+           "    mov rax, " bfd bputs
+             operand
+             sizeof(Str) *
+             strlits +ptr
+             @Str.count
+             bfd bputu
+           "\n" bfd bputs
+
+           "    push rax\n"     bfd bputs
+           "    push str_"      bfd bputs
+           operand bfd bputu
+           "\n"                 bfd bputs
+        else type OP_PUSH_CSTR = if*
+           "    push str_"      bfd bputs
+           operand bfd bputu
+           "\n"                 bfd bputs
+        else type OP_IF = if*
+           "    pop rax\n"       bfd bputs
+           "    test rax, rax\n" bfd bputs
+           "    jz addr_"        bfd bputs ip operand + bfd bputu "\n" bfd bputs
+        else type OP_IFSTAR = if*
+           "    pop rax\n"       bfd bputs
+           "    test rax, rax\n" bfd bputs
+           "    jz addr_"        bfd bputs ip operand + bfd bputu "\n" bfd bputs
+        else type OP_ELSE = if*
+           "    jmp addr_"       bfd bputs ip operand + bfd bputu "\n" bfd bputs
+        else type OP_END_WHILE = if*
+           "    jmp addr_"       bfd bputs ip operand - bfd bputu "\n" bfd bputs
+        else type OP_END_IF = if*
+           // NOTE: nothing to generate for x86_64
+        else type OP_WHILE = if*
+           // NOTE: nothing to generate. `while` is basically a label
+        else type OP_DO = if*
+           "    pop rax\n"       bfd bputs
+           "    test rax, rax\n" bfd bputs
+           "    jz addr_"        bfd bputs ip operand + bfd bputu "\n" bfd bputs
+        else type OP_PREP_PROC = if*
+           "    sub rsp, "                  bfd bputs
+           operand                          bfd bputu
+           "\n"                             bfd bputs
+
+           "    mov [ret_stack_rsp], rsp\n" bfd bputs
+           "    mov rsp, rax\n"             bfd bputs
+        else type OP_RET = if*
+           "    mov rax, rsp\n"             bfd bputs
+           "    mov rsp, [ret_stack_rsp]\n" bfd bputs
+           "    add rsp, "                  bfd bputs
+           operand             bfd bputu
+           "\n"                             bfd bputs
+           "    ret\n"                      bfd bputs
+        else type OP_CALL = if*
+           "    mov rax, rsp\n"             bfd bputs
+           "    mov rsp, [ret_stack_rsp]\n" bfd bputs
+           "    call addr_"                 bfd bputs
+           operand             bfd bputu
+           "\n"                             bfd bputs
+           "    mov [ret_stack_rsp], rsp\n" bfd bputs
+           "    mov rsp, rax\n"             bfd bputs
+        else type OP_INLINED = if*
+           // ignored
+        else type OP_INTRINSIC = if*
+            assert "Exhaustive handling of Intrinsics in generate-op-intel-linux-x86_64"
+              COUNT_INTRINSICS 46 =
+            end
+
+            operand INTRINSIC_PLUS = if
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    add rax, rbx\n"        bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_MINUS = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    sub rbx, rax\n"        bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_MUL = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    mul rbx\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_DIVMOD = if*
+                "    xor rdx, rdx\n"        bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    pop rax\n"             bfd bputs
+                "    div rbx\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+                "    push rdx\n"            bfd bputs
+            else operand INTRINSIC_IDIVMOD = if*
+                "    pop rbx\n"             bfd bputs
+                "    pop rax\n"             bfd bputs
+                "    cqo\n"                 bfd bputs
+                "    idiv rbx\n"            bfd bputs
+                "    push rax\n"            bfd bputs
+                "    push rdx\n"            bfd bputs
+            else operand INTRINSIC_MAX = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    cmp rbx, rax\n"        bfd bputs
+                "    cmovge rax, rbx\n"     bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_SHR = if*
+                "    pop rcx\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    shr rbx, cl\n"         bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_SHL = if*
+                "    pop rcx\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    shl rbx, cl\n"         bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_OR = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    or rbx, rax\n"         bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_AND = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    and rbx, rax\n"        bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_NOT = if*
+                "    pop rax\n"             bfd bputs
+                "    not rax\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_PRINT = if*
+                "    pop rdi\n"             bfd bputs
+                "    call print\n"          bfd bputs
+            else operand INTRINSIC_EQ = if*
+                "    mov rcx, 0\n"          bfd bputs
+                "    mov rdx, 1\n"          bfd bputs
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    cmp rax, rbx\n"        bfd bputs
+                "    cmove rcx, rdx\n"      bfd bputs
+                "    push rcx\n"            bfd bputs
+            else operand INTRINSIC_GT = if*
+                "    mov rcx, 0\n"          bfd bputs
+                "    mov rdx, 1\n"          bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    pop rax\n"             bfd bputs
+                "    cmp rax, rbx\n"        bfd bputs
+                "    cmovg rcx, rdx\n"      bfd bputs
+                "    push rcx\n"            bfd bputs
+            else operand INTRINSIC_LT = if*
+                "    mov rcx, 0\n"          bfd bputs
+                "    mov rdx, 1\n"          bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    pop rax\n"             bfd bputs
+                "    cmp rax, rbx\n"        bfd bputs
+                "    cmovl rcx, rdx\n"      bfd bputs
+                "    push rcx\n"            bfd bputs
+            else operand INTRINSIC_GE = if*
+                "    mov rcx, 0\n"          bfd bputs
+                "    mov rdx, 1\n"          bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    pop rax\n"             bfd bputs
+                "    cmp rax, rbx\n"        bfd bputs
+                "    cmovge rcx, rdx\n"     bfd bputs
+                "    push rcx\n"            bfd bputs
+            else operand INTRINSIC_LE = if*
+                "    mov rcx, 0\n"          bfd bputs
+                "    mov rdx, 1\n"          bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    pop rax\n"             bfd bputs
+                "    cmp rax, rbx\n"        bfd bputs
+                "    cmovle rcx, rdx\n"     bfd bputs
+                "    push rcx\n"            bfd bputs
+            else operand INTRINSIC_NE = if*
+                "    mov rcx, 0\n"          bfd bputs
+                "    mov rdx, 1\n"          bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    pop rax\n"             bfd bputs
+                "    cmp rax, rbx\n"        bfd bputs
+                "    cmovne rcx, rdx\n"     bfd bputs
+                "    push rcx\n"            bfd bputs
+            else operand INTRINSIC_DUP = if*
+                "    pop rax\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_SWAP = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_DROP = if*
+                "    pop rax\n"             bfd bputs
+            else operand INTRINSIC_OVER = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    push rbx\n"            bfd bputs
+                "    push rax\n"            bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_ROT = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    pop rcx\n"             bfd bputs
+                "    push rbx\n"            bfd bputs
+                "    push rax\n"            bfd bputs
+                "    push rcx\n"            bfd bputs
+            else operand INTRINSIC_LOAD8 = if*
+                "    pop rax\n"             bfd bputs
+                "    xor rbx, rbx\n"        bfd bputs
+                "    mov bl, [rax]\n"       bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_STORE8 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    mov [rax], bl\n"       bfd bputs
+            else operand INTRINSIC_LOAD16 = if*
+                "    pop rax\n"             bfd bputs
+                "    xor rbx, rbx\n"        bfd bputs
+                "    mov bx, [rax]\n"       bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_STORE16 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    mov [rax], bx\n"       bfd bputs
+            else operand INTRINSIC_LOAD32 = if*
+                "    pop rax\n"             bfd bputs
+                "    xor rbx, rbx\n"        bfd bputs
+                "    mov ebx, [rax]\n"      bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_STORE32 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    mov [rax], ebx\n"      bfd bputs
+            else operand INTRINSIC_LOAD64 = if*
+                "    pop rax\n"             bfd bputs
+                "    xor rbx, rbx\n"        bfd bputs
+                "    mov rbx, [rax]\n"      bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_STORE64 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rbx\n"             bfd bputs
+                "    mov [rax], rbx\n"      bfd bputs
+            else operand INTRINSIC_ARGC = if*
+                "    mov rax, [args_ptr]\n" bfd bputs
+                "    mov rax, [rax]\n"      bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_ARGV = if*
+                "    mov rax, [args_ptr]\n" bfd bputs
+                "    add rax, 8\n"          bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_ENVP = if*
+                "    mov rax, [args_ptr]\n" bfd bputs
+                "    mov rax, [rax]\n"      bfd bputs
+                "    add rax, 2\n"          bfd bputs
+                "    shl rax, 3\n"          bfd bputs
+                "    mov rbx, [args_ptr]\n" bfd bputs
+                "    add rbx, rax\n"        bfd bputs
+                "    push rbx\n"            bfd bputs
+            else operand INTRINSIC_CAST_PTR = if*
+            else operand INTRINSIC_CAST_INT = if*
+            else operand INTRINSIC_CAST_BOOL = if*
+            else operand INTRINSIC_CAST_ADDR = if*
+            else operand INTRINSIC_SYSCALL0 = if*
+                "    pop rax\n"             bfd bputs
+                "    syscall\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_SYSCALL1 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rdi\n"             bfd bputs
+                "    syscall\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_SYSCALL2 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rdi\n"             bfd bputs
+                "    pop rsi\n"             bfd bputs
+                "    syscall\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_SYSCALL3 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rdi\n"             bfd bputs
+                "    pop rsi\n"             bfd bputs
+                "    pop rdx\n"             bfd bputs
+                "    syscall\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_SYSCALL4 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rdi\n"             bfd bputs
+                "    pop rsi\n"             bfd bputs
+                "    pop rdx\n"             bfd bputs
+                "    pop r10\n"             bfd bputs
+                "    syscall\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_SYSCALL5 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rdi\n"             bfd bputs
+                "    pop rsi\n"             bfd bputs
+                "    pop rdx\n"             bfd bputs
+                "    pop r10\n"             bfd bputs
+                "    pop r8\n"              bfd bputs
+                "    syscall\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_SYSCALL6 = if*
+                "    pop rax\n"             bfd bputs
+                "    pop rdi\n"             bfd bputs
+                "    pop rsi\n"             bfd bputs
+                "    pop rdx\n"             bfd bputs
+                "    pop r10\n"             bfd bputs
+                "    pop r8\n"              bfd bputs
+                "    pop r9\n"              bfd bputs
+                "    syscall\n"             bfd bputs
+                "    push rax\n"            bfd bputs
+            else operand INTRINSIC_??? = if*
+            else
+              here eputs ": unreachable. Invalid intrinsic.\n" eputs
+              1 exit
+            end
+        else
+          here eputs ": unreachable. Invalid op.\n" eputs
+          1 exit
+        end
+      end
+    end
+  end
+end
+
+proc generate-fasm-linux-x86_64
+  ptr // file-path
+in
+  memory bfd sizeof(Bfd) end
+  sizeof(Bfd) 0 bfd memset drop
+
+  let file-path in
+    silent @bool lnot if
+      "[INFO] Generating "       puts
+      file-path cstr-to-str puts
+      "\n"                       puts
+    end
+
+    420                            // mode
+    O_CREAT O_WRONLY or O_TRUNC or // flags
+    file-path                      // pathname
+    AT_FDCWD
+    openat
+
+    BFD_CAP tmp-alloc
+    let fd buff in
+      fd   bfd Bfd.fd  ptr+ !int
+      buff bfd Bfd.buff ptr+ !ptr
+
+      fd 0 < if
+        "[ERROR] could not open `output.asm`\n" eputs
+        1 exit
+      end
+
+      "format ELF64 executable 3\n"   bfd bputs
+      "segment readable executable\n" bfd bputs
+      bfd generate-print-intel-linux-x86_64
+
+      0 while dup ops-count @64 < do
+        dup bfd generate-op-intel-linux-x86_64
+        1 +
+      end drop
+
+      "addr_"       bfd bputs
+      ops-count @64 bfd bputu
+      ":\n"         bfd bputs
+
+      "entry start\n"                  bfd bputs
+      "start:\n"                       bfd bputs
+      "    mov [args_ptr], rsp\n"      bfd bputs
+      "    mov rax, ret_stack_end\n"   bfd bputs
+      "    mov [ret_stack_rsp], rax\n" bfd bputs
+
+      "main" proc-lookup-by-name
+      let main-proc in
+        main-proc NULL ptr= if
+          here eputs ": Assertion Failed: type checking phase did not check the existence of `main` procedure" eputs
+          1 exit
+        end
+
+        "    call addr_"              bfd bputs
+        main-proc Proc.addr ptr+ @int bfd bputu
+        "\n"                          bfd bputs
+      end
+
+      "    mov rax, 60\n"           bfd bputs
+      "    mov rdi, 0\n"            bfd bputs
+      "    syscall\n"               bfd bputs
+      "segment readable writable\n" bfd bputs
+      0 while dup strlits-count @64 < do
+        let i in
+          "str_" bfd bputs
+          i      bfd bputu
+          ":"    bfd bputs
+          i sizeof(Str) * strlits +ptr
+          let str in
+            str ?str-empty lnot if
+              " db "   bfd bputs
+              str @Str bfd bputdecstr
+            end
+          end
+          "\n" bfd bputs
+          i 1 +
+        end
+      end drop
+      // "segment .bss\n"           bfd bputs
+      "args_ptr: rq 1\n"         bfd bputs
+      "ret_stack_rsp: rq 1\n"    bfd bputs
+      "ret_stack: rb "           bfd bputs X86_64_RET_STACK_CAP bfd bputu "\n" bfd bputs
+      "ret_stack_end:\n"         bfd bputs
+      "mem: rb "                 bfd bputs
+      global-memory-capacity @64 bfd bputu
+      "\n"                       bfd bputs
+
+      bfd bflush
+      fd close drop
+      buff tmp-rewind
+    end
+  end
+end
+
 /// END Code Generator //////////////////////////////
 
 /// BEGIN File Path Buffer //////////////////////////////
@@ -4290,39 +4860,43 @@ in
     != if context TypeContext.block-start-ip ptr+ @int sizeof(Op) * ops +ptr
       let op in
         op Op.token ptr+ Token.text ptr+ @Str
-        proc-lookup-by-name Proc.imported ptr+ @int 0 != lnot if
-          op Op.type ptr+ @int OP_WHILE = if
-            op Op.token ptr+ Token.loc ptr+ eputloc
-            op Op.type ptr+ @int
-              ": ERROR: Unexpected data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations.\n" eputs
-            drop
-          else op Op.type ptr+ @int OP_PREP_PROC = if*
-            op Op.token ptr+ Token.loc ptr+ eputloc
-            op Op.type ptr+ @int
-              ": ERROR: Unexpected data on the stack at the end of the procedure. The expected elements on the stack are listed after the `--` operator.\n" eputs
-            drop
-          else
-            here               eputs
-            ": unreachable "   eputs
-            69 exit
-          end
-
-          context TypeContext.stack ptr+ TypeStack.top ptr+ @ptr
-            dup TypeFrame.loc ptr+                     eputloc
-            ": NOTE: Unexpected type `"                eputs
-            dup TypeFrame.type ptr+ @int datatype-name eputs
-            "`\n"                                      eputs
+        proc-lookup-by-name 
+        dup NULL ptr!= if 
+          Proc.imported ptr+ @int 0 !=
+        else 
+          drop false 
+        end if
+        else op Op.type ptr+ @int OP_WHILE = if*
+          op Op.token ptr+ Token.loc ptr+ eputloc
+          op Op.type ptr+ @int
+            ": ERROR: Unexpected data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations.\n" eputs
           drop
-
-          context TypeContext.outs ptr+ TypeStack.top ptr+ @ptr
-            dup TypeFrame.loc ptr+                       eputloc
-            ": NOTE: Expected type `"                    eputs
-            dup TypeFrame.type ptr+ @int datatype-name   eputs
-            "`\n"                                        eputs
+        else op Op.type ptr+ @int OP_PREP_PROC = if*
+          op Op.token ptr+ Token.loc ptr+ eputloc
+          op Op.type ptr+ @int
+            ": ERROR: Unexpected data on the stack at the end of the procedure. The expected elements on the stack are listed after the `--` operator.\n" eputs
           drop
-
-          1 exit
+        else
+          here               eputs
+          ": unreachable "   eputs
+          69 exit
         end
+
+        context TypeContext.stack ptr+ TypeStack.top ptr+ @ptr
+          dup TypeFrame.loc ptr+                     eputloc
+          ": NOTE: Unexpected type `"                eputs
+          dup TypeFrame.type ptr+ @int datatype-name eputs
+          "`\n"                                      eputs
+        drop
+
+        context TypeContext.outs ptr+ TypeStack.top ptr+ @ptr
+          dup TypeFrame.loc ptr+                       eputloc
+          ": NOTE: Expected type `"                    eputs
+          dup TypeFrame.type ptr+ @int datatype-name   eputs
+          "`\n"                                        eputs
+        drop
+
+        1 exit
       end
     end
     context TypeContext.stack ptr+ type-stack-pop
@@ -4335,7 +4909,12 @@ in
   let stack outs op in 
     stack outs != if
       op Op.token ptr+ Token.text ptr+ @Str
-      proc-lookup-by-name Proc.imported ptr+ @int 0 != if
+      proc-lookup-by-name 
+      dup NULL ptr!= if 
+        Proc.imported ptr+ @int 0 !=
+      else 
+        drop false 
+      end if
       else stack outs > if*
           op Op.type ptr+ @int OP_WHILE = if
             op Op.token ptr+ Token.loc ptr+ eputloc
@@ -4441,4 +5020,188 @@ proc summary in
   "Global memory size (bytes):   " puts global-memory-capacity @int putu "\n" puts
   "Type Frames leaked:           " puts type-frame-pool-count  @int putu "/" puts TYPE_FRAME_POOL_CAP putu "\n" puts
   "Type Frame size (bytes):      " puts sizeof(TypeFrame) putu "\n" puts
+end
+
+proc usage
+  ptr // program name
+  int // fd
+in
+  let name fd in
+    "Usage: " eputs name cstr-to-str puts " [OPTIONS] <SUBCOMMAND>\n"                          fd fputs
+    "  OPTIONS:\n"                                                                             fd fputs
+    "    -unsafe               Disable type checking.\n"                                       fd fputs
+    "    -I <path>             Add <path> to the include paths list.\n"                        fd fputs
+    "  SUBCOMMANDS:\n"                                                                         fd fputs
+    "    com [OPTIONS] <file>  Compile the program\n"                                          fd fputs
+    "      OPTIONS:\n"                                                                         fd fputs
+    // TODO: implement -o flag for com subcommand
+    "        -r                  Run the program after successful compilation\n"               fd fputs
+    "        -s                  Silent mode. Don't print any info about compilation phases\n" fd fputs
+    "    dump <file>           Dump the ops of the program\n"                                  fd fputs
+    "    lex <file>            Produce lexical analysis of the file\n"                         fd fputs
+    "    summary <file>        Print the summary of the program\n"                             fd fputs
+    "    help                  Print this help to stdout and exit with 0 code\n"               fd fputs
+  end
+end
+
+memory args sizeof(ptr) end
+memory program sizeof(ptr) end
+memory unsafe sizeof(bool) end
+memory input-file-path-cstr sizeof(ptr) end
+memory base-file-path sizeof(Str) end
+memory run sizeof(bool) end
+
+proc porth-main in
+  args @@ptr "com"c cstreq if
+    while
+      args sizeof(ptr) inc64-by
+      args @@ptr NULL ptr= if
+        false // break
+      else args @@ptr "-r"c cstreq if*
+        true run !bool
+        true  // continue
+      else args @@ptr "-s"c cstreq if*
+        true silent !bool
+        true  // continue
+      else
+        args @@ptr input-file-path-cstr !ptr
+        args sizeof(ptr) inc64-by
+        false // break
+      end
+    do end
+
+    input-file-path-cstr @ptr NULL ptr= if
+      program @ptr stderr usage
+      "[ERROR] no input file is provided for the compilation.\n" eputs
+      1 exit
+    end
+
+    input-file-path-cstr @ptr cstr-to-str remove-ext base-file-path !Str
+
+    input-file-path-cstr @ptr compile-program-into-ops
+    unsafe @bool lnot if type-check-program end
+
+    timeit/from-here
+      fpb-end
+        base-file-path @Str fpb-append drop
+        ".asm"              fpb-append drop
+        1                   fpb-alloc  drop
+        dup generate-fasm-linux-x86_64
+      fpb-rewind
+    "[INFO] Generation" silent @bool timeit/to-here
+
+    timeit/from-here
+      cmd-dev-null-stdout @bool
+        silent @bool cmd-dev-null-stdout !bool
+        fpb-end
+          tmp-end
+          "fasm"c       tmp-append-ptr
+          "-m"c         tmp-append-ptr
+          "524288"c     tmp-append-ptr
+          fpb-end
+            base-file-path @Str fpb-append drop
+            ".asm"              fpb-append drop
+            1                   fpb-alloc  drop
+            tmp-append-ptr
+          fpb-end
+            base-file-path @Str fpb-append drop
+            ".tmp"              fpb-append drop
+            1                   fpb-alloc  drop
+            tmp-append-ptr
+          NULL          tmp-append-ptr
+          silent @bool lnot cmd-echoed
+        fpb-rewind
+      cmd-dev-null-stdout !bool
+
+      fpb-end
+        fpb-end
+          base-file-path @Str fpb-append drop
+          1                   fpb-alloc  drop
+
+        fpb-end
+          base-file-path @Str fpb-append drop
+          ".tmp"              fpb-append drop
+          1                   fpb-alloc  drop
+
+        silent @bool lnot if
+          "[INFO] renaming " puts
+          dup cstr-to-str    puts
+          " -> "             puts
+          over cstr-to-str   puts
+          "\n"               puts
+        end
+
+        rename 0 < if
+          "ERROR: could not rename the file\n" eputs
+          1 exit
+        end
+      fpb-rewind
+
+      fpb-end
+        tmp-end
+        "chmod"c      tmp-append-ptr
+        "+x"c         tmp-append-ptr
+        fpb-end
+          base-file-path @Str fpb-append drop
+          1                   fpb-alloc  drop
+          tmp-append-ptr
+        NULL          tmp-append-ptr
+        silent @bool lnot cmd-echoed
+      fpb-rewind
+    "[INFO] fasm" silent @bool timeit/to-here
+
+    run @bool if
+      tmp-end
+      fpb-end
+        base-file-path @Str fpb-append drop
+        1 fpb-alloc drop
+        tmp-append-ptr
+      while args @@ptr NULL ptr!= do
+        args @@ptr tmp-append-ptr
+        args sizeof(ptr) inc64-by
+      end
+      NULL        tmp-append-ptr
+      silent @bool lnot cmd-echoed
+    end
+  else args @@ptr "help"c cstreq if*
+    program @ptr stdout usage
+    0 exit
+  else args @@ptr "dump"c cstreq if*
+    args sizeof(ptr) inc64-by
+    args @@ptr NULL ptr= if
+      program @ptr stderr usage
+      "ERROR: no input file is provided for the `dump` subcommand\n" eputs
+      1 exit
+    end
+
+    args @@ptr compile-program-into-ops
+    unsafe @bool lnot if type-check-program end
+
+    dump-ops
+  else args @@ptr "lex"c cstreq if*
+    args sizeof(ptr) inc64-by
+    args @@ptr NULL ptr= if
+      program @ptr stderr usage
+      "ERROR: no input file is provided for the `lex` subcommand\n" eputs
+      1 exit
+    end
+
+    args @@ptr lex-file
+  else args @@ptr "summary"c cstreq if*
+    args sizeof(ptr) inc64-by
+    args @@ptr NULL ptr= if
+      program @ptr stderr usage
+      "ERROR: no input file is provided for the `dump` subcommand\n" eputs
+      1 exit
+    end
+
+    args @@ptr compile-program-into-ops
+    unsafe @bool lnot if type-check-program end
+
+    summary
+  else
+    program @ptr stderr usage
+    "ERROR: unknown subcommand `" eputs args @@ptr cstr-to-str eputs "`\n" eputs
+    1 exit
+  end
 end

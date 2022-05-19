@@ -3,14 +3,11 @@
 include "4std.porth"
 include "porth-4ork.porth"
 
-proc include-paths-add-env bool int ptr in
+proc include-paths-add-env int ptr in
   getenv-check if
     cstr-to-str append-std 
-    rot lnot if 
-      "[INFO] Including " puts over over puts " path\n" puts
-    end
     include-paths-add
-  else drop drop end
+  else drop end
 end
 
 proc generate-wasm-op-comment ptr ptr in
@@ -737,6 +734,7 @@ in
   let name fd in
     "Usage: " eputs name cstr-to-str puts " [OPTIONS] <SUBCOMMAND>\n"                          fd fputs
     "  OPTIONS:\n"                                                                             fd fputs
+    "    -porth                Use the original porth compiler and CLI instead of 4orth.\n"    fd fputs
     "    -unsafe               Disable type checking.\n"                                       fd fputs
     "    -I <path>             Add <path> to the include paths list.\n"                        fd fputs
     "  SUBCOMMANDS:\n"                                                                         fd fputs
@@ -759,56 +757,13 @@ in
   end
 end
 
-proc main in
+proc wasm-main in
   // Default include paths
   "."     include-paths-add
   "./std" include-paths-add
 
-  memory args sizeof(ptr) end
-  argv args !ptr
-
-  memory program sizeof(ptr) end
-  args @@ptr program !ptr
-
-  memory unsafe sizeof(bool) end
-  false unsafe !bool
-
-  while
-    args sizeof(ptr) inc64-by
-    args @@ptr NULL ptr= if
-      false // break
-    else args @@ptr "-unsafe"c cstreq if*
-      true unsafe !bool
-      true  // continue
-    else args @@ptr "-I"c cstreq if*
-      args sizeof(ptr) inc64-by
-      args @@ptr
-        dup ?null if
-          "ERROR: no argument is provided for -I flag\n" eputs
-          1 exit
-        end
-        dup cstr-to-str include-paths-add
-      drop
-      true // continue
-    else
-      false // break
-    end
-  do end
-
-  args @@ptr NULL ptr= if
-    program @ptr stderr wasm-usage
-    "ERROR: subcommand is not provided\n" eputs
-    1 exit
-  end
-
-  memory input-file-path-cstr sizeof(ptr) end
-  NULL input-file-path-cstr !ptr
   memory output-file-path-cstr sizeof(ptr) end
   NULL output-file-path-cstr !ptr
-  memory base-file-path sizeof(Str) end
-  0 NULL base-file-path !Str
-  memory run sizeof(bool) end
-  false run !bool
   memory optimize sizeof(bool) end
   false optimize !bool
   memory wasm2wat sizeof(bool) end
@@ -869,8 +824,6 @@ proc main in
     end
 
     input-file-path-cstr @ptr cstr-to-str remove-ext base-file-path !Str
-    silent @bool "_4ORTH" include-paths-add-env
-    silent @bool "PORTH"  include-paths-add-env
 
     input-file-path-cstr @ptr compile-program-into-ops
     unsafe @bool lnot if type-check-program end
@@ -1086,5 +1039,62 @@ proc main in
     program @ptr stderr wasm-usage
     "ERROR: unknown subcommand `" eputs args @@ptr cstr-to-str eputs "`\n" eputs
     1 exit
+  end
+end
+
+proc main in
+  // Default include paths
+  "."      include-paths-add
+  "./std"  include-paths-add
+  "_4ORTH" include-paths-add-env
+  "PORTH"  include-paths-add-env
+
+  NULL input-file-path-cstr !ptr
+  0 NULL base-file-path !Str
+  false run !bool
+
+  argv args !ptr
+  args @@ptr program !ptr
+  false unsafe !bool
+
+  memory porth-mode sizeof(bool) end
+  false porth-mode !bool
+
+  while
+    args sizeof(ptr) inc64-by
+    args @@ptr NULL ptr= if
+      false // break
+    else args @@ptr "-unsafe"c cstreq if*
+      true unsafe !bool
+      true  // continue
+    else args @@ptr "-I"c cstreq if*
+      args sizeof(ptr) inc64-by
+      args @@ptr
+        dup ?null if
+          "ERROR: no argument is provided for -I flag\n" eputs
+          1 exit
+        end
+        dup cstr-to-str include-paths-add
+      drop
+      true // continue
+    else args @@ptr "-porth"c cstreq if*
+      true porth-mode !bool
+      true  // continue
+    else
+      false // break
+    end
+  do end
+
+  args @@ptr NULL ptr= if
+    program @ptr stderr 
+    porth-mode @bool if usage else wasm-usage end
+    "ERROR: subcommand is not provided\n" eputs
+    1 exit
+  end
+
+  porth-mode @bool if
+    porth-main
+  else
+    wasm-main
   end
 end
