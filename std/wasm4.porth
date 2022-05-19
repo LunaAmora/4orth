@@ -81,7 +81,7 @@ const $MOUSE_X       2     offset cast(ptr) end
 const $MOUSE_Y       2     offset cast(ptr) end
 const $MOUSE_BUTTONS 1     offset cast(ptr) end
 const $SYSTEM_FLAGS  1     offset cast(ptr) end
-const $NETPLAY       1     offset cast(ptr) end // Experimental netplay player index
+const $NETPLAY       1     offset cast(ptr) end
 const $RESERVED      127   offset cast(ptr) end // Reserved bytes for future use
 const $FRAMEBUFFER   6400  offset cast(ptr) end
 const $PORTH_MEM     54880 offset cast(ptr) end // Start of Porth global mem and return stack
