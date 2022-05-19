@@ -1,3 +1,5 @@
+// A modification of the reference implementation of the Porth Programming language in itself
+
 /// BEGIN Loc //////////////////////////////
 /// Loc is a location within the source code: file path, row, col
 const Loc.file-path sizeof(Str) offset end
@@ -412,8 +414,8 @@ in
        lexer @ptr Lexer.line ptr+ ?str-empty lnot if
          lexer @ptr Lexer.line ptr+ @Str.data @8 'c' = if
            lexer @ptr Lexer.line ptr+ str-chop-one-left
-           "\\00"  strbuf-append-str 
-           token @ptr Token.value ptr+ offsetof(Str.count) ptr+ 3 inc64-by
+           0 strbuf-append-char
+           token @ptr Token.value ptr+ offsetof(Str.count) ptr+ inc64
            TOKEN_CSTR token @ptr Token.type ptr+ !64
          else
            TOKEN_STR token @ptr Token.type ptr+ !64
@@ -515,7 +517,7 @@ const DATATYPE_INT  1 offset end
 const DATATYPE_PTR  1 offset end
 const DATATYPE_BOOL 1 offset end
 const DATATYPE_ADDR 1 offset end
-const DATATYPE_CSTR  1 offset end
+const DATATYPE_CSTR 1 offset end
 const COUNT_DATATYPES  reset end
 
 const HUMAN_SINGULAR 1 offset end
@@ -1310,7 +1312,6 @@ const PROCS_CAP 1024 end
 memory procs-count sizeof(u64) end
 memory procs sizeof(Proc) PROCS_CAP * end
 memory inside-proc sizeof(bool) end
-memory inside-injection sizeof(bool) end
 
 proc proc-lookup-by-name
   int ptr // proc name
@@ -1460,75 +1461,6 @@ in
   drop
 end
 /// END Memory //////////////////////////////
-
-/// BEGIN Code Injection //////////////////////////////
-/// Array of strings to inject on the compiled program.
-/// The operand of OP_INJECT_CODE is the
-/// index within this array
-const Inject.ins  sizeof(TypeStack) offset end
-const Inject.outs sizeof(TypeStack) offset end
-const Inject.size sizeof(int) offset end
-const Inject.addr sizeof(int) offset end
-const sizeof(Injection) reset end
-
-const INJECT_CAP 1024 end
-memory inject-count sizeof(u64) end
-memory injects sizeof(Injection) INJECT_CAP * end
-
-proc inject-define
-  ptr // proc
-in
-  sizeof(Injection) swap INJECT_CAP injects inject-count append-item lnot if
-    here eputs ": ERROR: injections definitions capacity exceeded\n" eputs
-    1 exit
-  end
-  drop
-end
-
-proc inject-lookup-by-addr
-  int // proc addr
-  --
-  ptr // proc
-in
-  memory addr sizeof(int) end
-  addr !int
-
-  0 while
-    dup inject-count @64 < if
-      dup sizeof(Injection) * injects +ptr Inject.addr ptr+ @int
-      addr @int
-      !=
-    else false end
-  do 1 + end
-
-  dup inject-count @64 < if
-    sizeof(Injection) * injects +ptr
-  else
-    drop NULL
-  end
-end
-
-const INJECTIONS_CAP 2 1024 * end
-memory injections-count sizeof(int) end
-memory injections sizeof(Str) INJECTIONS_CAP * end
-
-proc injection-define
-  int ptr
-  --
-  int
-in
-  memory injection sizeof(Str) end
-  injection !Str
-
-  sizeof(Str) injection
-  INJECTIONS_CAP injections
-  injections-count
-  append-item lnot if
-    here eputs ": ERROR: code injection capacity exceeded\n" eputs
-    1 exit
-  end
-end
-/// END Code Injection //////////////////////////////
 
 memory silent sizeof(bool) end
 
@@ -2050,12 +1982,6 @@ in
           end
           swap
         drop
-      else inside-injection @bool token Token.type ptr+ @int TOKEN_STR = land if*
-        OP_INJECT_CODE
-        token Token.value ptr+ @Str injection-define
-        token
-        push-op
-        false // break, no contract in inlined block
       else
         token Token.loc ptr+                                     eputloc
         ": ERROR: "                                              eputs
@@ -2135,269 +2061,6 @@ in
   true inside-proc !bool
 
   prok proc-define
-end
-
-const WASM_MODULES_CAP 8 end
-memory wasm-modules sizeof(Str) WASM_MODULES_CAP * end
-memory wasm-modules-count sizeof(int) end
-
-proc wasm-modules-add
-  int ptr
-in
-  wasm-modules-count @int
-  let n s count in
-    count WASM_MODULES_CAP >= if
-      here eputs ": Assertion Failed: wasm-modules capacity overflow\n" eputs
-      1 exit
-    end
-
-    n s
-    count sizeof(Str) * wasm-modules +ptr
-    !Str
-
-    wasm-modules-count inc64
-  end
-end
-
-proc introduce-wasm-module
-  ptr // token
-  ptr // lexer
-in
-  memory lexer_ sizeof(ptr) end
-  lexer_ !ptr
-  memory token sizeof(Token) end
-  sizeof(Token) swap token memcpy drop
-
-  inside-proc @bool if
-    token Token.loc ptr+                                                             eputloc
-    ": ERROR: definition of imports inside of procedures is not allowed\n" eputs
-    procs-count @int 1 - sizeof(Proc) * procs +ptr Proc.loc ptr+                     eputloc
-    ": NOTE: the current procedure starts here\n"                                    eputs
-    1 exit
-  end
-
-  token Token.type ptr+ @64 TOKEN_WORD != if
-    token Token.loc ptr+ eputloc
-    ": ERROR: expected import type to be a word or 'proc' but found " eputs
-    token Token.type ptr+ @64 HUMAN_SINGULAR human-token-type eputs
-    " instead\n" eputs
-    1 exit
-  end
-
-  token Token.value ptr+ @Str "module" streq lnot if
-    token Token.loc ptr+ eputloc
-    ": ERROR: unknown import type found: " eputs
-    token Token.value ptr+ @Str eputs
-    "\n" eputs
-    1 exit
-  end
-
-  memory token2 sizeof(Token) end
-  
-  token2 lexer_ @ptr lexer-next-token lnot if
-    token2 Token.loc ptr+ eputloc
-    ": ERROR: expected import module name but found nothing\n" eputs
-    1 exit
-  end
-
-  token2 Token.type ptr+ @int TOKEN_STR != if
-    token2 Token.loc ptr+ eputloc
-    ": ERROR: expected import module name to be a string but found "   eputs
-    token2 Token.type ptr+ @int HUMAN_SINGULAR human-token-type eputs
-    "\n"                                                        eputs
-    1 exit
-  end
-
-  token2 Token.value ptr+ @Str
-  wasm-modules-add
-end
-
-const EXPORT_CAP 1024 end
-const sizeof(export) sizeof(Str) 2 * end
-memory exports sizeof(export) EXPORT_CAP * end
-memory exports-count sizeof(int) end
-
-proc exports-add
-  int ptr
-  int ptr
-in
-  exports-count @int
-  let n s n1 s1 count in
-    count EXPORT_CAP >= if
-      here eputs ": Assertion Failed: exports capacity overflow\n" eputs
-      1 exit
-    end
-
-    n s
-    count sizeof(export) * exports +ptr
-    !Str
-    n1 s1
-    count sizeof(export) * exports +ptr sizeof(Str) ptr+
-    !Str
-
-    exports-count inc64
-  end
-end
-
-proc introduce-export
-  ptr // token
-  ptr // lexer
-in
-  memory lexer_ sizeof(ptr) end
-  lexer_ !ptr
-  memory token sizeof(Token) end
-  sizeof(Token) swap token memcpy drop
-
-  inside-proc @bool if
-    token Token.loc ptr+                                                             eputloc
-    ": ERROR: definition of exports inside of procedures is not allowed\n" eputs
-    procs-count @int 1 - sizeof(Proc) * procs +ptr Proc.loc ptr+                     eputloc
-    ": NOTE: the current procedure starts here\n"                                    eputs
-    1 exit
-  end
-
-  token lexer_ @ptr lexer-next-token lnot if
-    token Token.loc ptr+ eputloc
-    ": ERROR: expected export value but found nothing\n" eputs
-    1 exit
-  end
-
-  token Token.type ptr+ @64 TOKEN_WORD != if
-    token Token.loc ptr+ eputloc
-    ": ERROR: expected export value to be a word but found " eputs
-    token Token.type ptr+ @64 HUMAN_SINGULAR human-token-type eputs
-    " instead\n" eputs
-    1 exit
-  end
-
-  memory token2 sizeof(Token) end
-  
-  token2 lexer_ @ptr lexer-next-token lnot if
-    token2 Token.loc ptr+ eputloc
-    ": ERROR: expected export name but found nothing\n" eputs
-    1 exit
-  end
-
-  token2 Token.type ptr+ @int TOKEN_STR != if
-    token2 Token.loc ptr+ eputloc
-    ": ERROR: expected export name to be a string but found "   eputs
-    token2 Token.type ptr+ @int HUMAN_SINGULAR human-token-type eputs
-    "\n"                                                        eputs
-    1 exit
-  end
-
-  token Token.value ptr+ @Str
-  token2 Token.value ptr+ @Str
-  exports-add
-end
-
-proc introduce-import
-  ptr // token
-  ptr // lexer
-in
-  memory lexer_ sizeof(ptr) end
-  lexer_ !ptr
-  memory token sizeof(Token) end
-  sizeof(Token) swap token memcpy drop
-  memory prok sizeof(Proc) end
-
-  inside-proc @bool if
-    token Token.loc ptr+                                                             eputloc
-    ": ERROR: definition procedures inside of procedures is not allowed (for now)\n" eputs
-    procs-count @int 1 - sizeof(Proc) * procs +ptr Proc.loc ptr+                     eputloc
-    ": NOTE: the current procedure starts here\n"                                    eputs
-    1 exit
-  end
-
-  sizeof(Proc) 0 prok memset drop
-
-  wasm-modules-count @int 0 = if
-    "env" wasm-modules-add
-  end
-
-  wasm-modules-count @int prok Proc.imported ptr+ !int
-
-  token lexer_ @ptr lexer-next-token lnot if
-    token Token.loc ptr+ eputloc
-    ": ERROR: expected procedure name but found nothing\n" eputs
-    1 exit
-  end
-
-  token Token.type ptr+ @64 TOKEN_WORD != if
-    token Token.loc ptr+ eputloc
-    ": ERROR: expected procedure name to be a word but found " eputs
-    token Token.type ptr+ @64 HUMAN_SINGULAR human-token-type eputs
-    " instead\n" eputs
-    1 exit
-  end
-
-  sizeof(Loc) token Token.loc ptr+ prok Proc.loc ptr+ memcpy drop
-
-  token Token.value ptr+ @Str
-  token Token.loc ptr+
-  check-name-redefinition
-
-  sizeof(Str) token Token.value ptr+ prok Proc.name ptr+ memcpy drop
-
-  ops-count @64
-  dup prok Proc.addr ptr+ !64
-      parse-block-stack-push
-  OP_PREP_PROC 0 token push-op
-
-  prok
-    lexer_ @ptr over Proc.ins ptr+ parse-proc-contract-list if
-      lexer_ @ptr over Proc.outs ptr+ parse-proc-contract-list drop
-    end
-  drop
-
-  true inside-proc !bool
-
-  prok proc-define
-end
-
-proc current-inject -- ptr in
-  inside-injection @bool if
-    inject-count @int
-    1 -
-    sizeof(Injection) *
-    injects +ptr
-  else
-    NULL
-  end
-end
-
-proc introduce-injection
-  ptr // token
-  ptr // lexer
-in
-  memory lexer_ sizeof(ptr) end
-  lexer_ !ptr
-  memory token sizeof(Token) end
-  sizeof(Token) swap token memcpy drop
-  memory injekt sizeof(Injection) end
-  sizeof(Injection) 0 injekt memset drop
-
-  ops-count @64
-  dup injekt Inject.addr ptr+ !64
-  parse-block-stack-push
-
-  OP_INJECTED 
-  ops-count @64 
-  token 
-  push-op
-
-  true inside-injection !bool
-
-  inside-proc @bool if
-    injekt
-      lexer_ @ptr over Inject.ins ptr+ parse-proc-contract-list if
-        lexer_ @ptr over Inject.outs ptr+ parse-proc-contract-list drop
-      end
-    drop
-  end
-
-
-  injekt inject-define
 end
 
 proc inline-procedure
@@ -2666,16 +2329,6 @@ in
   end
 end
 
-proc include-paths-add-env bool int ptr in
-  getenv-check if
-    cstr-to-str append-std 
-    rot lnot if 
-      "[INFO] Including " puts over over puts " path\n" puts
-    end
-    include-paths-add
-  else drop drop end
-end
-
 proc include-paths-resolve-file
   int ptr
   --
@@ -2711,6 +2364,8 @@ in
     end
   end
 end
+
+include "4orth-compilation.porth"
 
 proc compile-file-into-ops
   ptr  // file path cstr
@@ -3331,7 +2986,7 @@ in
                   1 exit
                 end
               drop // token.value
-           else type @int TOKEN_STR = if*
+            else type @int TOKEN_STR = if*
               inside-injection @bool if
                 OP_INJECT_CODE
                 value @Str injection-define

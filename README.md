@@ -111,7 +111,7 @@ wasm
 end
 ```
 
-When inside a procedure, inline WASM blocks can define a contract to be used in type checking.
+When inside a procedure, inline WASM blocks have to define a contract to be used in type checking.
 
 ```porth
 inline proc xor int int -- int in

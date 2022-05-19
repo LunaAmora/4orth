@@ -3,7 +3,17 @@
 include "4std.porth"
 include "porth-4ork.porth"
 
-proc generate-op-comment ptr ptr in
+proc include-paths-add-env bool int ptr in
+  getenv-check if
+    cstr-to-str append-std 
+    rot lnot if 
+      "[INFO] Including " puts over over puts " path\n" puts
+    end
+    include-paths-add
+  else drop drop end
+end
+
+proc generate-wasm-op-comment ptr ptr in
   let op bfd in
     op Op.type    ptr+ @int
     op Op.operand ptr+ @int
@@ -378,7 +388,7 @@ in
             false skip-inline !bool
           end
         else
-          op bfd generate-op-comment
+          op bfd generate-wasm-op-comment
           // "\n" bfd bputs
         end
       end
@@ -386,7 +396,7 @@ in
   end
 end
 
-memory wasm sizeof(bool) end
+memory raw-wasm sizeof(bool) end
 
 proc generate-wasm-imports
   int // ip
@@ -442,10 +452,10 @@ in
   let ip bfd in
     ip sizeof(export) * exports +ptr dup @Str
     proc-lookup-by-name swap sizeof(Str) ptr+
-    let prok export in
+    let prok eksport in
       prok NULL ptr!= if
         "(export \"" bfd bputs
-        export @Str    bfd bputs
+        eksport @Str    bfd bputs
         "\""         bfd bputs
         " (func $f"  bfd bputs
         prok Proc.addr ptr+ @int bfd bputu
@@ -519,7 +529,7 @@ in
         1 +
       end drop
 
-      wasm @bool if
+      raw-wasm @bool if
         "(memory 1)\n" bfd bputs
         "(export \"memory\" (memory 0))\n" bfd bputs
       else
@@ -720,7 +730,7 @@ proc sprite-template in
   end
 end
 
-proc usage
+proc wasm-usage
   ptr // program name
   int // fd
 in
@@ -786,7 +796,7 @@ proc main in
   do end
 
   args @@ptr NULL ptr= if
-    program @ptr stderr usage
+    program @ptr stderr wasm-usage
     "ERROR: subcommand is not provided\n" eputs
     1 exit
   end
@@ -829,7 +839,7 @@ proc main in
         true wasm2wat !bool
         true  // continue
       else args @@ptr "-wasm"c cstreq if*
-        true wasm !bool
+        true raw-wasm !bool
         true  // continue
       else args @@ptr "-o"c cstreq if*
         true output !bool
@@ -848,12 +858,12 @@ proc main in
     do end
 
     input-file-path-cstr @ptr NULL ptr= if
-      program @ptr stderr usage
+      program @ptr stderr wasm-usage
       "[ERROR] no input file is provided for the compilation.\n" eputs
       1 exit
     end
 
-    wasm @bool run @bool bundle @bool lor land if
+    raw-wasm @bool run @bool bundle @bool lor land if
       "ERROR: Wasm compile option can't be used with bundle or run\n" eputs
       1 exit
     end
@@ -993,12 +1003,12 @@ proc main in
     end
 
   else args @@ptr "help"c cstreq if*
-    program @ptr stdout usage
+    program @ptr stdout wasm-usage
     0 exit
   else args @@ptr "dump"c cstreq if*
     args sizeof(ptr) inc64-by
     args @@ptr NULL ptr= if
-      program @ptr stderr usage
+      program @ptr stderr wasm-usage
       "ERROR: no input file is provided for the `dump` subcommand\n" eputs
       1 exit
     end
@@ -1010,7 +1020,7 @@ proc main in
   else args @@ptr "lex"c cstreq if*
     args sizeof(ptr) inc64-by
     args @@ptr NULL ptr= if
-      program @ptr stderr usage
+      program @ptr stderr wasm-usage
       "ERROR: no input file is provided for the `lex` subcommand\n" eputs
       1 exit
     end
@@ -1019,7 +1029,7 @@ proc main in
   else args @@ptr "summary"c cstreq if*
     args sizeof(ptr) inc64-by
     args @@ptr NULL ptr= if
-      program @ptr stderr usage
+      program @ptr stderr wasm-usage
       "ERROR: no input file is provided for the `dump` subcommand\n" eputs
       1 exit
     end
@@ -1032,7 +1042,7 @@ proc main in
     args sizeof(ptr) inc64-by
 
     args @@ptr NULL ptr= if
-      program @ptr stderr usage
+      program @ptr stderr wasm-usage
       "ERROR: no input file is provided for the `png2src` subcommand\n" eputs
       1 exit
     end
@@ -1073,7 +1083,7 @@ proc main in
       silent @bool lnot cmd-echoed
     fpb-rewind
   else
-    program @ptr stderr usage
+    program @ptr stderr wasm-usage
     "ERROR: unknown subcommand `" eputs args @@ptr cstr-to-str eputs "`\n" eputs
     1 exit
   end
