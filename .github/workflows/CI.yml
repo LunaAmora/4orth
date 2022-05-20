@@ -20,8 +20,8 @@ jobs:
 
       - name: Setup env
         run: |
-          sudo apt update
-          sudo apt install wabt binaryen fasm
+          sudo apt-get update
+          sudo apt-get install wabt binaryen fasm
       
       - name: Download WASM4
         uses: robinraju/release-downloader@v1.3
