@@ -58,9 +58,9 @@ Tip: Add `_4ORTH` environment variable to automatically have the std libraries a
 $ ./4orth [OPTIONS] <SUBCOMMAND>
 
 OPTIONS:
-    -porth               Use the original porth compiler and CLI instead of 4orth.
-    -unsafe              Disable type checking.
-    -I <path>            Add <path> to the include paths list.
+    -porth               Use the original porth compiler and CLI instead of 4orth
+    -unsafe              Disable type checking
+    -I <path>            Add <path> to the include paths list
 SUBCOMMANDS:
     com [OPTIONS] <file> Compile the program
         -r               Run the program after successful compilation
@@ -69,9 +69,7 @@ SUBCOMMANDS:
         -wat             Transforms the stripped program back from the final `.wasm` to `.wat`
         -wasm            Target WASM instead of Wasm-4 (doesn't support -b or -r)
         -s               Silent mode. Don't print any info about compilation phases
-        -o  <file>       File to write the result to 
-    png2src <file>       Uses w4 to convert a png file to Porth code and prints it
-        -s               Silent mode. Only print the converted code
+        -o  <file>       File to write the result to
     help                 Print this help to stdout and exit with 0 code
 ```
 
