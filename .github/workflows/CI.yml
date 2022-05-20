@@ -54,8 +54,11 @@ jobs:
           ./bootstrap/porth-linux-x86_64 com ./porth.porth
           ./porth com ./porth.porth
       
-      - name: Build 4orth
+      - name: Compile 4orth
         run: ./porth/porth -I ./porth/std com 4orth.porth
+      
+      - name: Test selfcompilation
+        run: ./4orth -porth com 4orth.porth
         
       - name: Test Compilation
         run: ./4orth -I ./porth/std com -b -opt -wat ./example/snake-example.porth
