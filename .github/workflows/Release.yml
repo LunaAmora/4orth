@@ -21,7 +21,7 @@ jobs:
         id: latest_version
         uses: abatilo/release-info-action@v1.3.0
         with:
-          owner: FrankWPA
+          owner: LunaAmora
           repo:  4orth
 
       - name: Get Current Tag

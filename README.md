@@ -12,7 +12,7 @@ Most of the code in this repository was written by [Tsoding](https://github.com/
 
 ## Quick Start
 
-You can download the latest [release](https://github.com/FrankWPA/4orth/releases) or [bootstrap](https://github.com/FrankWPA/4orth#bootstrapping) it yourself.
+You can download the latest [release](https://github.com/LunaAmora/4orth/releases) or [bootstrap](https://github.com/LunaAmora/4orth#bootstrapping) it yourself.
 
 ### Bootstrapping
 
