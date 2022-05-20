@@ -8,6 +8,8 @@
 # 4orth 
 4orth is a [Porth](https://gitlab.com/tsoding/porth) compiler with [WASM](https://webassembly.org/), [WASI](https://wasi.dev/) and [WASM-4](https://wasm4.org/) targets.
 
+Most of the code in this repository was written by [Tsoding](https://github.com/rexim) and other contributors to the original Porth compiler. 4orth was created as an alternative compiler for WASM, and reuses a lot of its codebase.
+
 ## Quick Start
 
 You can download the latest [release](https://github.com/FrankWPA/4orth/releases) or [bootstrap](https://github.com/FrankWPA/4orth#bootstrapping) it yourself.
@@ -142,7 +144,7 @@ All available [functions](https://wasm4.org/docs/reference/functions), constants
 
 The [wasi.porth](./std/wasi.porth) library contains a minimal WASI setup and a imported proc that prints to stdout.
 
-Huge thanks to [Tsoding](https://github.com/tsoding) for all the educational content and for (being in the process of) creating such a fun language to experiment with.\
+Huge thanks to [Tsoding](https://github.com/rexim) for all the educational content and for (being in the process of) creating such a fun language to experiment with.\
 And Thanks [Aduros](https://github.com/aduros) for the fantastic fantasy console [Wasm-4](https://wasm4.org/).
 
 The two projects just seemed so compatible to me that I had to try a way to play with both at the same time!
