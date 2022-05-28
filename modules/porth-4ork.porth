@@ -4865,38 +4865,39 @@ in
           Proc.imported ptr+ @int 0 !=
         else 
           drop false 
-        end if
-        else op Op.type ptr+ @int OP_WHILE = if*
-          op Op.token ptr+ Token.loc ptr+ eputloc
-          op Op.type ptr+ @int
-            ": ERROR: Unexpected data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations.\n" eputs
+        end lnot if
+          op Op.type ptr+ @int OP_WHILE = if
+            op Op.token ptr+ Token.loc ptr+ eputloc
+            op Op.type ptr+ @int
+              ": ERROR: Unexpected data on the stack after a single iteration of the loop. The types and the amount of elements on the stack are not allowed to change between the iterations.\n" eputs
+            drop
+          else op Op.type ptr+ @int OP_PREP_PROC = if*
+            op Op.token ptr+ Token.loc ptr+ eputloc
+            op Op.type ptr+ @int
+              ": ERROR: Unexpected data on the stack at the end of the procedure. The expected elements on the stack are listed after the `--` operator.\n" eputs
+            drop
+          else
+            here               eputs
+            ": unreachable "   eputs
+            69 exit
+          end
+
+          context TypeContext.stack ptr+ TypeStack.top ptr+ @ptr
+            dup TypeFrame.loc ptr+                     eputloc
+            ": NOTE: Unexpected type `"                eputs
+            dup TypeFrame.type ptr+ @int datatype-name eputs
+            "`\n"                                      eputs
           drop
-        else op Op.type ptr+ @int OP_PREP_PROC = if*
-          op Op.token ptr+ Token.loc ptr+ eputloc
-          op Op.type ptr+ @int
-            ": ERROR: Unexpected data on the stack at the end of the procedure. The expected elements on the stack are listed after the `--` operator.\n" eputs
+
+          context TypeContext.outs ptr+ TypeStack.top ptr+ @ptr
+            dup TypeFrame.loc ptr+                       eputloc
+            ": NOTE: Expected type `"                    eputs
+            dup TypeFrame.type ptr+ @int datatype-name   eputs
+            "`\n"                                        eputs
           drop
-        else
-          here               eputs
-          ": unreachable "   eputs
-          69 exit
+
+          1 exit
         end
-
-        context TypeContext.stack ptr+ TypeStack.top ptr+ @ptr
-          dup TypeFrame.loc ptr+                     eputloc
-          ": NOTE: Unexpected type `"                eputs
-          dup TypeFrame.type ptr+ @int datatype-name eputs
-          "`\n"                                      eputs
-        drop
-
-        context TypeContext.outs ptr+ TypeStack.top ptr+ @ptr
-          dup TypeFrame.loc ptr+                       eputloc
-          ": NOTE: Expected type `"                    eputs
-          dup TypeFrame.type ptr+ @int datatype-name   eputs
-          "`\n"                                        eputs
-        drop
-
-        1 exit
       end
     end
     context TypeContext.stack ptr+ type-stack-pop
