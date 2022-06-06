@@ -1,0 +1,7 @@
+run = "./4orth com -s -r -opt ./example/snake-example.porth"
+
+compile = "bash bootstrap.sh"
+
+[env]
+PATH = "$PWD/porth:$PWD/"
+_4ORTH = "$PWD/"
