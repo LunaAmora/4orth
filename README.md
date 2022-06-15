@@ -5,7 +5,8 @@
         <img alt="GitHub" src="https://img.shields.io/github/license/lunaamora/4orth">
 </p>
 
-# 4orth 
+# 4orth
+
 4orth is a [Porth](https://gitlab.com/tsoding/porth) compiler with [WASM](https://webassembly.org/), [WASI](https://wasi.dev/) and [WASM-4](https://wasm4.org/) targets.
 
 Most of the code in this repository was written by [Tsoding](https://github.com/rexim) and other contributors to the original Porth compiler. 4orth was created as an alternative compiler for WASM, and reuses a lot of its codebase.
@@ -19,6 +20,7 @@ You can download the latest [release](https://github.com/LunaAmora/4orth/release
 Since Porth is self-hosted you will need to bootstrap it first. Follow Porth [bootstrapping](https://gitlab.com/tsoding/porth#bootstrapping) instructions on how to do that. (4orth includes the original porth compiler with the -porth option, so you can use the 4orth executable instead to bootstrap/update itself)
 
 Secondly you will need to install:
+
 - [WABT](https://github.com/WebAssembly/wabt)
 - [Binaryen](https://github.com/WebAssembly/binaryen) (optional, for optimized .wasm files)
 
@@ -29,6 +31,7 @@ $ ./4orth -porth com 4orth.porth
 ```
 
 Then, you are ready to compile and run your Porth programs using the runtime of your choice:
+
 - [WASM-4](https://wasm4.org/)
 - [WASMTIME](https://wasmtime.dev/)
 - [WASMER](https://wasmer.io/)
@@ -49,7 +52,7 @@ $ wasmtime main.wasm
 With Wasm-4, you can use the subcommands `-b` and `-r` to bundle and run after the compilation. (As porth only supports Linux, `-b` creates a Linux executable. For other options, check `w4 bundle --help` or [Wasm-4](https://wasm4.org/docs/guides/distribution) distribution docs)
 
 ```console
-$ ./4orth com -b -r main.porth
+./4orth com -b -r main.porth
 ```
 
 Tip: Add `_4ORTH` environment variable to automatically have the std libraries available in 4orth include path.
@@ -87,16 +90,20 @@ SUBCOMMANDS:
 - Null terminated string support in const evaluation (evaluates to a pointer to the string)
 
 ### Importing and exporting procs
+
 4orth introduces two new keywords allowing Porth to interact with the WASM module system:
 
 - Import
+
 ```porth
 import proc trace ptr in end
 ```
-This adds the ability to call the Wasm-4 `trace` function via the defined proc contract. Imported procs must have an empty body. 
+
+This adds the ability to call the Wasm-4 `trace` function via the defined proc contract. Imported procs must have an empty body.
 (Porth's `print` intrinsic calls this imported proc, you can use either of them to log to the console)
 
 - Export
+
 ```porth
 export main "start"
 export update "update"
@@ -105,6 +112,7 @@ export update "update"
 This exports the desired procs to be called by Wasm-4 or other Wasm runtimes.
 
 ### Inline WASM code
+
 4orth allows you to inline WASM code into your program by using the `wasm` keyword. Any string inside the code block will be inlined in the compiled program.
 
 ```porth
@@ -136,6 +144,7 @@ The default module imported by 4orth is `dev`. You can include other modules in 
 ```porth
 import module "my_module"
 ```
+
 This line changes the current module context to `my_module`. Every imported proc defined after this line will use this context until a new module is imported.
 
 ## Others
