@@ -1,5 +1,5 @@
 <p align="center">
-        <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/lunaamora/4orth/CI">
+        <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/lunaamora/4orth/CI.yml">
         <img alt="GitHub release (latest by date including pre-releases)" src="https://img.shields.io/github/v/release/lunaamora/4orth?include_prereleases">
         <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/lunaamora/4orth/total">
         <img alt="GitHub" src="https://img.shields.io/github/license/lunaamora/4orth">
